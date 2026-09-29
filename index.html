@@ -3,44 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyThings</title>
+<title>MyThings · 导航</title>
 <style>
-:root{--bg:#f6f4ef;--card:#fffefa;--ink:#1c1b17;--muted:#6f6a5d;--line:#e4ded0;--accent:#c2410c}
+:root{
+  --bg:#f6f4ef;--paper2:#fffdf8;--card:#fffefa;--ink:#1c1b17;--ink2:#35322b;
+  --muted:#6f6a5d;--faint:#9a9484;--line:#e4ded0;--line2:#d5cebd;
+  --accent:#c2410c;--accent-dark:#9a3412;--accent-soft:#fbe9dd;
+  --violet:#7c3aed;--violet-soft:#f0e9fe;--green:#15803d;--green-soft:#e2f3e7;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;padding:80px 24px}
-.wrap{max-width:680px;margin:0 auto}
-h1{font-size:42px;letter-spacing:.02em}
-.sub{color:var(--muted);margin:8px 0 48px}
-a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 28px;margin-bottom:16px;text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s}
-a.card:hover{box-shadow:0 6px 24px rgba(30,25,15,.08);transform:translateY(-2px)}
-.card h2{font-size:20px}
-.card h2 span{color:var(--accent)}
-.card p{color:var(--muted);font-size:14px;margin-top:6px}
-.card .go{color:var(--accent);font-size:13px;margin-top:12px}
-footer{margin-top:48px;color:#9a9484;font-size:13px}
-code{background:#efeadf;border-radius:5px;padding:2px 7px;font-size:.9em}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(900px 480px at 82% -8%,#f3e7d3 0%,transparent 58%),var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased;padding:72px 24px 40px}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:920px;margin:0 auto}
+
+/* header */
+.head{margin-bottom:34px}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:1.5px;color:var(--accent-dark);border:1px solid rgba(194,65,12,.3);background:var(--accent-soft);padding:5px 13px;border-radius:999px;margin-bottom:20px}
+.kicker .dot{width:6px;height:6px;border-radius:50%;background:#f97316;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+h1{font-family:var(--serif);font-size:clamp(38px,6vw,60px);font-weight:900;letter-spacing:.01em;line-height:1.05}
+h1 em{color:var(--accent);font-style:normal}
+.sub{color:var(--muted);margin-top:10px;font-size:15.5px;max-width:640px}
+.stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;font-size:13px;color:var(--muted)}
+.stats b{font-family:var(--mono);font-size:19px;color:var(--accent-dark);display:block;line-height:1.3}
+.stats span{color:var(--faint);opacity:.75;margin-right:6px}
+
+/* controls */
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:34px 0 8px}
+.search{position:relative;flex:1;min-width:230px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45}
+.search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--card);border:1px solid var(--line2);border-radius:11px;padding:12px 14px 12px 40px;outline:none;transition:.18s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search .kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;background:var(--paper2)}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.tagbtn{font-family:var(--sans);font-size:12.5px;color:var(--muted);background:var(--paper2);border:1px solid var(--line2);border-radius:999px;padding:7px 14px;cursor:pointer;transition:.15s}
+.tagbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tagbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.count{font-family:var(--mono);font-size:12px;color:var(--faint);margin:16px 2px 10px}
+.count b{color:var(--accent-dark)}
+
+/* cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+a.card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;color:inherit;transition:box-shadow .18s,transform .18s,border-color .18s;box-shadow:0 1px 2px rgba(30,25,15,.04);position:relative;overflow:hidden}
+a.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),#f0abfc);opacity:0;transition:.2s}
+a.card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(30,25,15,.09);border-color:var(--line2)}
+a.card:hover::before{opacity:1}
+.card .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.card h2{font-family:var(--serif);font-size:22px;font-weight:900;letter-spacing:.01em}
+.card h2 .arw{color:var(--accent);font-weight:400;font-size:18px;transition:.2s}
+a.card:hover h2 .arw{transform:translateX(3px);display:inline-block}
+.card .date{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
+.card p{color:var(--muted);font-size:13.8px;margin-top:8px;line-height:1.7;flex:1}
+.card .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:var(--mono);font-size:10.5px;color:var(--accent-dark);background:var(--accent-soft);border-radius:5px;padding:2px 8px}
+.chip.v{color:#4c1d95;background:var(--violet-soft)}
+.chip.g{color:#14532d;background:var(--green-soft)}
+.card .path{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:12px;padding-top:12px;border-top:1px dashed var(--line2)}
+.empty{display:none;text-align:center;color:var(--faint);font-size:14px;padding:50px 20px;border:1px dashed var(--line2);border-radius:16px;background:var(--paper2)}
+.empty.show{display:block}
+
+/* add-note */
+.note{margin-top:30px;background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+.note h3{font-family:var(--serif);font-size:16px;font-weight:800;margin-bottom:10px}
+.note code{font-family:var(--mono);font-size:12px;background:#efeadf;border-radius:5px;padding:2px 7px;color:var(--ink2)}
+.note ol{margin:8px 0 0 20px;font-size:13.5px;color:var(--muted)}
+.note li{margin-bottom:5px}
+.note li b{color:var(--ink2)}
+footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>MyThings</h1>
-  <p class="sub">个人网页合集 · 由 GitHub Pages 托管</p>
 
-  <a class="card" href="OpenUI/">
-    <h2>OpenUI <span>→</span></h2>
-    <p>OpenUI / OpenUI Lang 深度调研：生成式 UI 的格式之争、token 与可靠性基准、OUI-1 模型，以及可交互的流式渲染演示</p>
-    <div class="go">wade11s.github.io/MyThings/OpenUI/</div>
-  </a>
+  <header class="head">
+    <span class="kicker"><span class="dot"></span>MYTHINGS · 静态网页合集</span>
+    <h1>MyThings<em>.</em></h1>
+    <p class="sub">每个文件夹是一个可独立访问、可离线打开的自包含页面。这里是一切入口的地图。</p>
+    <div class="stats">
+      <div><b id="n-pages">2</b><span>个页面</span></div>
+      <div><b>2026</b><span>最近更新</span>09 月</div>
+      <div><b>0</b><span>外部依赖</span>纯静态</div>
+    </div>
+  </header>
 
-  <a class="card" href="Jev/">
-    <h2>Jev <span>→</span></h2>
-    <p>Jev 模型深度调研：首个「系统一模型」的单文件交互式解读网页</p>
-    <div class="go">wade11s.github.io/MyThings/Jev/</div>
-  </a>
+  <div class="controls">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6f6a5d" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="搜索页面、关键词或标签…" autocomplete="off">
+      <span class="kbd">/</span>
+    </label>
+    <div class="tags" id="tags"></div>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div class="cards" id="cards">
+    <a class="card" href="OpenUI/" data-desc="OpenUI 生成式 UI 框架与 OpenUI Lang 深度调研：格式之争、token 与可靠性基准、OUI-1 模型，以及可交互的流式渲染演示" data-tags="调研,生成式UI,交互图表,可交互演示,LLM">
+      <div class="top"><h2>OpenUI <span class="arw">→</span></h2><span class="date">2026-09</span></div>
+      <p>OpenUI / OpenUI Lang 深度调研：生成式 UI 的格式之争、token 与可靠性基准、OUI-1 模型，以及可交互的流式渲染演示。</p>
+      <div class="chips"><span class="chip">生成式 UI</span><span class="chip">交互图表</span><span class="chip v">流式渲染演示</span></div>
+      <div class="path">/MyThings/OpenUI/</div>
+    </a>
+
+    <a class="card" href="Jev/" data-desc="Jev 模型深度调研：首个「系统一模型」的单文件交互式解读网页，含原理拆解、性能实测与真实落地案例" data-tags="调研,模型,交互网页,LLM">
+      <div class="top"><h2>Jev <span class="arw">→</span></h2><span class="date">2026-09</span></div>
+      <p>Jev 模型深度调研：首个「系统一模型」的单文件交互式解读网页，含原理拆解、性能实测与真实落地案例。</p>
+      <div class="chips"><span class="chip">模型调研</span><span class="chip">交互网页</span><span class="chip g">交互式演示</span></div>
+      <div class="path">/MyThings/Jev/</div>
+    </a>
+  </div>
+
+  <div class="empty" id="empty">没有匹配的页面 —— 试试别的关键词，或清空筛选。</div>
+
+  <div class="note">
+    <h3>新增一个页面</h3>
+    <ol>
+      <li><b>mkdir 名称/</b>，写入自包含的 <code>名称/index.html</code>（CSS/JS 内联，零外部依赖）。</li>
+      <li>在本页 <code>.cards</code> 里照抄一张卡片，指向 <code>名称/</code>。</li>
+      <li>在 <code>README.md</code> 表格补一行，然后 <code>git push</code>。</li>
+      <li>约 1 分钟后生效：<code>wade11s.github.io/MyThings/名称/</code></li>
+    </ol>
+  </div>
 
   <footer>
-    新增文件夹：放入 <code>index.html</code> 后 <code>git push</code>，约 1 分钟生效。
+    <span>GitHub Pages · legacy 构建 · 源 = <code>main</code> 分支根目录</span>
+    <span><a href="https://github.com/Wade11s/MyThings">仓库</a> · <a href="https://github.com/Wade11s/MyThings/blob/main/README.md">README</a></span>
   </footer>
 </div>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+const cards = $$('#cards .card');
+
+/* 统计 */
+$('#n-pages').textContent = cards.length;
+
+/* 标签集合 */
+const tagSet = new Set();
+cards.forEach(c => (c.dataset.tags || '').split(',').forEach(t => { t = t.trim(); if (t) tagSet.add(t); }));
+const tagsBox = $('#tags');
+['全部', ...tagSet].forEach((t, i) => {
+  const b = document.createElement('button');
+  b.className = 'tagbtn' + (i === 0 ? ' on' : '');
+  b.textContent = t;
+  b.onclick = () => { $$('.tagbtn', tagsBox).forEach(x => x.classList.remove('on')); b.classList.add('on'); apply(); };
+  tagsBox.appendChild(b);
+});
+
+let activeTag = '全部';
+
+function apply(){
+  const q = $('#q').value.trim().toLowerCase();
+  let shown = 0;
+  cards.forEach(c => {
+    const hay = (c.textContent + ' ' + (c.dataset.tags || '') + ' ' + (c.dataset.desc || '')).toLowerCase();
+    const okQ = !q || hay.includes(q);
+    const okT = activeTag === '全部' || (c.dataset.tags || '').split(',').map(s => s.trim()).includes(activeTag);
+    const show = okQ && okT;
+    c.style.display = show ? '' : 'none';
+    if (show) shown++;
+  });
+  $('#count').innerHTML = '显示 <b>' + shown + '</b> / ' + cards.length + ' 个页面'
+    + (activeTag !== '全部' ? ' · 标签 <b>' + activeTag + '</b>' : '')
+    + (q ? ' · 关键词 <b>' + $('#q').value.trim() + '</b>' : '');
+  $('#empty').classList.toggle('show', shown === 0);
+}
+$('#q').addEventListener('input', apply);
+apply();
+
+/* 快捷键：/ 聚焦，Esc 清空 */
+addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); }
+  if (e.key === 'Escape' && document.activeElement === $('#q')) {
+    $('#q').value = ''; $$('.tagbtn', tagsBox).forEach((x, i) => x.classList.toggle('on', i === 0));
+    activeTag = '全部'; apply(); $('#q').blur();
+  }
+});
+</script>
 </body>
 </html>
