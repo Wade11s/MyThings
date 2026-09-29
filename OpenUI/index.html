@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenUI 深度调研 — 让模型别再写 JSON</title>
+<style>
+:root{
+  --paper:#f6f4ef; --paper2:#fffdf8; --card:#fffefa;
+  --ink:#1c1b17; --ink2:#35322b; --muted:#6f6a5d; --faint:#9a9484;
+  --line:#e4ded0; --line2:#d5cebd;
+  --accent:#c2410c; --accent-dark:#9a3412; --accent-soft:#fbe9dd;
+  --blue:#1d4ed8; --blue-soft:#e3ebfd;
+  --green:#15803d; --green-soft:#e2f3e7;
+  --amber:#b45309; --amber-soft:#faeeda;
+  --red:#b91c1c; --red-soft:#fbe5e5;
+  --violet:#7c3aed; --violet-soft:#f0e9fe;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),#f97316);z-index:1000}
+nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,239,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1160px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--serif);font-weight:900;font-size:20px;letter-spacing:.5px;color:var(--ink)}
+.nav-logo em{color:var(--accent);font-style:normal}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}
+.nav-links a{color:var(--muted);font-size:12.5px;padding:6px 9px;border-radius:6px;white-space:nowrap}
+.nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
+@media(max-width:1040px){.nav-links{display:none}}
+header.hero{background:radial-gradient(1200px 600px at 70% -10%,#f1e6d2 0%,transparent 55%),radial-gradient(900px 500px at 15% 110%,#f5e2d0 0%,transparent 50%),var(--paper);color:var(--ink);padding:150px 24px 84px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+header.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(28,27,23,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(28,27,23,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(800px 500px at 50% 40%,#000 30%,transparent 75%);pointer-events:none}
+.hero-inner{max-width:1160px;margin:0 auto;position:relative}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:13px;letter-spacing:1.5px;color:var(--accent-dark);border:1px solid rgba(194,65,12,.35);background:var(--accent-soft);padding:6px 14px;border-radius:999px;margin-bottom:28px}
+.hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#f97316;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+h1.hero-title{font-family:var(--serif);font-size:clamp(52px,9vw,116px);font-weight:900;line-height:1.02;letter-spacing:.01em}
+h1.hero-title .oui{color:var(--ink)}
+h1.hero-title .oui i{color:var(--accent);font-style:normal}
+h1.hero-title .sub{display:block;font-size:clamp(20px,3.2vw,34px);font-weight:600;color:#4a463c;margin-top:14px;letter-spacing:.04em}
+.hero-desc{max-width:780px;margin-top:26px;color:var(--ink2);font-size:17px}
+.hero-desc b{color:var(--ink);font-weight:600}
+.hero-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.chip{border:1px solid var(--line2);background:#fffefa;border-radius:10px;padding:10px 16px;font-size:13px;color:var(--muted);box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.chip b{display:block;font-family:var(--mono);font-size:19px;color:var(--accent-dark);font-weight:700}
+.chip b.warm{color:var(--violet)}
+.hero-meta{margin-top:40px;font-size:13px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.hero-meta i{font-style:normal;color:var(--faint)}
+main{max-width:1160px;margin:0 auto;padding:0 24px}
+section{padding:84px 0 30px}
+.sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:14px}
+.sec-no{font-family:var(--mono);font-size:14px;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:2px 10px;font-weight:700;white-space:nowrap}
+h2{font-family:var(--serif);font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:.02em}
+.sec-lede{color:var(--muted);max-width:880px;font-size:16.5px;margin-bottom:38px}
+.sec-lede b{color:var(--ink2)}
+h3{font-family:var(--serif);font-size:22px;font-weight:800;margin:44px 0 16px;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:8px;height:22px;background:var(--accent);border-radius:2px;flex:none}
+h4.sub-t{font-size:16px;font-weight:800;margin:28px 0 10px}
+p.body{margin-bottom:16px;max-width:920px;color:var(--ink2)}
+p.body b{color:var(--ink)}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:960px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.card h4{font-size:16.5px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card p{font-size:14px;color:var(--muted);line-height:1.75}
+.card .tag{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent-dark);font-weight:700}
+.fact-num{font-family:var(--mono);font-size:30px;font-weight:800;color:var(--accent);line-height:1.15}
+.fact-num small{font-size:14px;color:var(--muted);font-weight:600}
+.fact-label{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6}
+blockquote{margin:26px 0;padding:22px 26px;border-left:4px solid var(--accent);background:var(--paper2);border-radius:0 12px 12px 0;font-family:var(--serif);font-size:17px;color:var(--ink2);max-width:920px}
+blockquote footer{font-family:var(--sans);font-size:13px;color:var(--faint);margin-top:10px}
+blockquote .en{display:block;font-size:14px;color:var(--muted);font-family:var(--sans);margin-top:6px;font-style:italic}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);margin:22px 0}
+table.dt{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+table.dt th{background:#efeadd;text-align:left;padding:12px 16px;font-weight:800;color:var(--ink2);border-bottom:1px solid var(--line2);white-space:nowrap}
+table.dt td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+table.dt tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono)}
+.hl-cell{background:var(--accent-soft);font-weight:700;color:var(--accent-dark)}
+.win{color:var(--green);font-weight:700}
+.lose{color:var(--red);font-weight:700}
+pre{background:#f8f4ec;color:#3a372f;border-radius:12px;padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.75;border:1px solid var(--line)}
+pre .k{color:#c2410c}pre .s{color:#15803d}pre .n{color:#1d4ed8}pre .c{color:#9a9484}
+.code-label{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:1px;margin:26px 0 8px;text-transform:uppercase}
+.diagram{background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:26px;margin:26px 0;overflow-x:auto}
+.diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.diag-cap{text-align:center;font-size:12.5px;color:var(--faint);margin-top:14px;font-family:var(--mono)}
+.callout{border-radius:12px;padding:18px 22px;margin:20px 0;font-size:14.5px;line-height:1.8;border:1px solid;max-width:940px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd3ae;color:#7c4a03}
+.callout.info{background:var(--blue-soft);border-color:#c3d5f8;color:#1e3a8a}
+.callout.good{background:var(--green-soft);border-color:#bfe3ca;color:#14532d}
+.callout.bad{background:var(--red-soft);border-color:#f0c9c9;color:#7f1d1d}
+.callout.violet{background:var(--violet-soft);border-color:#d8c9fb;color:#4c1d95}
+.callout b{font-weight:800}
+.timeline{position:relative;margin:30px 0 10px;padding-left:34px}
+.timeline::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--accent),#f0abfc)}
+.tl-item{position:relative;padding:0 0 26px 18px}
+.tl-item::before{content:"";position:absolute;left:-31px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:3px solid var(--accent)}
+.tl-date{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--accent)}
+.tl-item h5{font-size:15.5px;font-weight:800;margin:2px 0 4px}
+.tl-item p{font-size:13.5px;color:var(--muted);line-height:1.7;max-width:840px}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 22px 14px;margin:24px 0;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.chart-title{font-size:15.5px;font-weight:800}
+.chart-sub{font-size:12.5px;color:var(--faint);margin-top:2px}
+.chart-wrap{width:100%}
+.chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-wrap .grid{stroke:#eae4d6;stroke-width:1}
+.chart-wrap .axis{stroke:#c9c1ae;stroke-width:1.4}
+.chart-wrap .ylab{fill:#9a9484;font-size:11px;font-family:var(--mono)}
+.chart-wrap .xlab{fill:#6f6a5d;font-size:11.5px;font-family:var(--sans)}
+.chart-wrap .vlab{fill:#6f6a5d;font-size:10.5px;font-family:var(--mono)}
+.chart-wrap .bar{transition:opacity .15s}
+.chart-wrap .bar:hover{opacity:.72}
+.chart-wrap .pt{cursor:pointer}
+.legend{display:flex;gap:8px;flex-wrap:wrap}
+.legend button,.lg-btn{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line2);background:var(--paper2);color:var(--muted);padding:5px 11px;border-radius:99px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.15s}
+.legend button:hover{border-color:var(--accent)}
+.legend button .sw,.lg-btn .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.legend button.off{opacity:.35;text-decoration:line-through}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:var(--paper2)}
+.seg button{border:none;background:transparent;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding:7px 13px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff;font-weight:700}
+.chart-note{font-size:12px;color:var(--faint);margin-top:10px;font-family:var(--mono);line-height:1.65}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 0}
+.tabs button{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);background:var(--paper2);color:var(--muted);padding:8px 13px;border-radius:9px;cursor:pointer;transition:.18s}
+.tabs button:hover{border-color:var(--accent);color:var(--accent)}
+.tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.tabs button .cnt{opacity:.7;font-size:10.5px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.demo{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin:26px 0;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.demo-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.btn{background:var(--accent);color:#fff;border:none;font-family:var(--mono);font-weight:700;font-size:13px;padding:10px 20px;border-radius:9px;cursor:pointer;transition:.18s}
+.btn:hover{background:#ea580c;transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.ghost{background:var(--paper2);color:var(--muted);border:1px solid var(--line2);font-weight:600}
+.btn.ghost:hover{background:#fff;color:var(--accent);border-color:var(--accent)}
+.demo-stat{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.demo-stat b{color:var(--accent-dark)}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.demo-grid{grid-template-columns:1fr}}
+.pane-label{font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;color:var(--faint);margin-bottom:7px;text-transform:uppercase}
+.demo-code{background:#f8f4ec;border:1px solid var(--line);border-radius:11px;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.72;height:430px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.demo-code .t-str{color:#15803d}
+.demo-code .t-bi{color:#a21caf;font-weight:700}
+.demo-code .t-var{color:#1d4ed8}
+.demo-code .t-comp{color:#c2410c;font-weight:700}
+.demo-code .caret{display:inline-block;width:7px;height:14px;background:var(--accent);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.demo-preview{background:#efeade;border:1px solid var(--line);border-radius:11px;padding:14px;height:430px;overflow:auto}
+.mock{font-family:var(--sans);font-size:12px;color:#2b2820}
+.mock .m-stack{display:flex;flex-direction:column;gap:10px}
+.mock .m-stack.row{flex-direction:row}
+.mock .m-stack.row>*{flex:1;min-width:0}
+.mock .m-card{background:#fffefa;border:1px solid #e8e2d4;border-radius:10px;padding:12px 13px;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.mock .m-h{font-weight:800;font-size:14px;letter-spacing:.3px}
+.mock .m-sub{color:#8a8474;font-size:11px;margin-top:1px}
+.mock .m-small{color:#8a8474;font-size:11px}
+.mock .m-lg{font-size:20px;font-weight:800;color:#c2410c;font-family:var(--mono);margin-top:3px}
+.mock .m-field{display:flex;flex-direction:column;gap:4px}
+.mock .m-flabel{font-size:11px;color:#8a8474}
+.mock select{font-family:var(--sans);font-size:12px;padding:6px 8px;border:1px solid #d5cbb6;border-radius:7px;background:#fff;color:#2b2820;width:100%;max-width:220px}
+.mock .m-bars{display:flex;align-items:flex-end;gap:10px;height:96px;margin-top:10px}
+.mock .m-barwrap{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:5px}
+.mock .m-bar{width:100%;background:linear-gradient(180deg,#fb923c,#c2410c);border-radius:5px 5px 0 0;transition:height .5s cubic-bezier(.2,.8,.2,1)}
+.mock .m-blab{font-size:10.5px;color:#6f6a5d}
+.mock table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}
+.mock th{text-align:left;padding:6px 8px;border-bottom:1px solid #e4ded0;color:#6f6a5d;font-weight:700;font-size:10.5px}
+.mock td{padding:6px 8px;border-bottom:1px solid #f0ebdd;font-family:var(--mono);font-size:11px}
+.mock tr:last-child td{border-bottom:none}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#ece5d7 25%,#f6f1e6 50%,#ece5d7 75%);background-size:220% 100%;animation:shimmer 1.3s infinite;margin:6px 0}
+@keyframes shimmer{0%{background-position:120% 0}100%{background-position:-120% 0}}
+.badge0{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--green-soft);color:#14532d;border:1px solid #bfe3ca}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+@media(max-width:820px){.vs{grid-template-columns:1fr}}
+.vs-col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.vs-col.bad{border-color:#ecc9c9;background:#fffafa}
+.vs-col.good{border-color:#bfe3ca;background:#fbfefb}
+.vs-col h5{font-size:14.5px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.step{padding:10px 12px;border-radius:9px;border:1px solid transparent;font-size:13px;color:var(--muted);margin-bottom:7px;transition:.3s;line-height:1.65}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--faint);margin-right:7px}
+.step.on{background:var(--accent-soft);border-color:#f0c7a8;color:var(--ink2)}
+.vs-col.good .step.on{background:var(--green-soft);border-color:#bfe3ca}
+.step .cost{display:block;font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}
+.big-claim{font-family:var(--serif);font-size:clamp(21px,3.3vw,31px);font-weight:800;line-height:1.5;text-align:center;max-width:940px;margin:70px auto 0;padding:0 24px;color:var(--ink)}
+.big-claim em{color:var(--accent);font-style:normal}
+.divider{max-width:1160px;margin:60px auto 0;padding:0 24px}
+.divider hr{border:none;height:1px;background:linear-gradient(90deg,transparent,var(--line2),transparent)}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.pill{font-size:12px;font-family:var(--mono);padding:4px 12px;border-radius:99px;border:1px solid var(--line2);color:var(--muted);background:var(--paper2)}
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:34px 0 10px}
+@media(max-width:900px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+.stat .v{font-family:var(--mono);font-size:clamp(22px,2.6vw,30px);font-weight:800;color:var(--accent)}
+.stat .v .u{font-size:13px;color:var(--muted)}
+.stat .l{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.quote-wall{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}
+@media(max-width:760px){.quote-wall{grid-template-columns:1fr}}
+.quote-wall .card{background:#fffdf8}
+.quote-wall .who{font-size:12px;color:var(--faint);margin-top:10px;font-family:var(--mono)}
+.refs{counter-reset:ref;max-width:960px}
+.ref{display:flex;gap:14px;padding:10px 0;border-bottom:1px dashed var(--line2);font-size:13.5px;color:var(--muted)}
+.ref::before{counter-increment:ref;content:counter(ref,decimal-leading-zero);font-family:var(--mono);color:var(--accent);font-weight:700;flex:none}
+.ref a{color:var(--ink2)}
+.ref a:hover{color:var(--accent)}
+.ref-cat{font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:1.5px;color:var(--accent);margin:26px 0 4px;text-transform:uppercase}
+footer{background:#efeadd;color:var(--muted);margin-top:90px;padding:56px 24px;font-size:13px;border-top:1px solid var(--line2)}
+.foot-inner{max-width:1160px;margin:0 auto}
+.foot-inner b{color:var(--ink);font-family:var(--serif);font-size:17px}
+.foot-inner p{margin-top:10px;max-width:780px;line-height:1.8}
+.foot-inner .fine{margin-top:24px;padding-top:18px;border-top:1px solid var(--line2);color:var(--faint);font-size:12px}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">OpenUI<em>·</em>深度调研</div>
+    <div class="nav-links">
+      <a href="#tldr">速览</a><a href="#why">出发点</a><a href="#lang">语言</a><a href="#arch">架构</a><a href="#demo">演示</a><a href="#token">Token</a><a href="#reliability">可靠性</a><a href="#oui1">OUI-1</a><a href="#ecosystem">生态</a><a href="#compare">竞品</a><a href="#debate">争议</a><a href="#refs">参考</a>
+    </div>
+  </div>
+</nav>
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-kicker"><span class="dot"></span>GENERATIVE UI · MIT · thesysdev/openui · 2026 年 9 月</span>
+    <h1 class="hero-title"><span class="oui">OpenUI<i>.</i></span>
+      <span class="sub">让模型别再写 JSON —— 一种为 UI 而生的<em style="color:#c2410c;font-style:normal">流式小语言</em></span>
+    </h1>
+    <p class="hero-desc">当 AI 要「画」一个界面，最自然的做法是让它吐一段 JSON 组件树。但一旦界面需要状态、需要查数据、需要响应点击，JSON 就暴露出结构性缺陷：括号错一处，整份输出报废；一个下拉框要几十行嵌套对象。OpenUI 的答案是造一门<b>像代码一样好写、像数据格式一样受限</b>的语言——<b>OpenUI Lang</b>：每行一条 <span class="mono">id = Component(args)</span>，逐行流式渲染，比 JSON 省最多 <b>67%</b> token，并让运行时在模型退场后独立执行交互。</p>
+    <div class="hero-chips">
+      <div class="chip"><b>9,897</b>GitHub Stars</div>
+      <div class="chip"><b>67<span style="font-size:13px">%</span></b>最多省下的 token</div>
+      <div class="chip"><b>4</b>官方运行时（React/Vue/Svelte/Angular）</div>
+      <div class="chip"><b>17</b>个 npm 包</div>
+      <div class="chip"><b class="warm">71.7<span style="font-size:13px">%</span></b>OUI-1 基准得分</div>
+    </div>
+    <div class="hero-meta">
+      <span>开发方 <b style="color:var(--ink)">Thesys</b>（旧金山 · 2024 年创立）</span><i>|</i>
+      <span>创始人 <b style="color:var(--ink)">Rabi Shanker Guha</b>（CEO）· <b style="color:var(--ink)">Parikshit Deshmukh</b></span><i>|</i>
+      <span>种子轮 <b style="color:var(--ink)">$4M</b> · Together Fund 领投 · 8VC 等参投</span>
+    </div>
+  </div>
+</header>
+<main>
+<!-- ============ 00 速览 ============ -->
+<section id="tldr">
+  <div class="sec-head reveal"><span class="sec-no">00</span><h2>一分钟速览</h2></div>
+  <p class="sec-lede reveal">如果只看一屏：OpenUI 是一套<b>「声明式生成式 UI」</b>标准与全栈框架。它赌的是——模型输出 UI 的正确形态不是 JSON，也不是完整编程语言，而是夹在中间的<b>受限 DSL</b>；界面应该被<b>生成一次</b>，然后像普通软件一样在本地跑起来，而不是每次点击都回炉给模型。</p>
+  <div class="grid g3">
+    <div class="card reveal"><h4>🧩 它是什么</h4><p>Thesys 开源的生成式 UI 框架。核心是 OpenUI Lang：行式赋值 DSL；配套组件库（Zod schema 定义）、系统提示生成器、流式解析器、渲染器。MIT 协议，2024-12 建仓，现约 9,900 stars。</p></div>
+    <div class="card reveal"><h4>🎯 解决什么</h4><p>让 LLM 生成的界面「可靠、便宜、可流式」。JSON 里每个父节点都要重复写 op/path/type/props/children，深层界面 token 成本翻 2–3 倍；且 JSON 没有「更小可回退单元」，一处括号错整屏报废。</p></div>
+    <div class="card reveal"><h4>⚙️ 核心机制</h4><p>四件套闭环：<b>组件库 → 系统提示 → 模型流式输出 Lang → 渲染器</b>。允许前向引用，所以 <span class="mono">root</span> 先到、子节点后到，骨架屏可以立刻出现；每行一条语句 → 解析错误只损失一行。</p></div>
+    <div class="card reveal"><h4>🔁 生成 ≠ 执行</h4><p>v0.5 加入 <span class="mono">$state</span> / <span class="mono">Query</span> / <span class="mono">Mutation</span> / <span class="mono">@builtins</span>。模型只生成一次「接线」，之后筛选、刷新、提交全部由运行时直接调工具完成，<b>零 token、约 100ms</b>。</p></div>
+    <div class="card reveal"><h4>📊 关键数字</h4><p>Token：4,800 vs json-render 10,180（<b>−52.8%</b>），单场景最高 −67.1%。可靠性（官方博文口径）：结构有效 96.5% vs 95.7% vs 80.2%，1104 次运行里仅 1 次白屏（A2UI 35 次）。</p></div>
+    <div class="card reveal"><h4>⚠️ 必须警惕</h4><p>基准是第一方自测；「白屏少」不等于「用户看不见错」（OpenUI 会以<b>部分渲染</b>替代白屏）。社区最大质疑：动态生成的「变色龙 UI」破坏肌肉记忆与可访问性。名字还和 W3C 的 OpenUI 社区组撞车。</p></div>
+  </div>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 01 出发点 ============ -->
+<section id="why">
+  <div class="sec-head reveal"><span class="sec-no">01</span><h2>出发点：一个「JSON 原教旨团队」的自我背叛</h2></div>
+  <p class="sec-lede reveal">最有说服力的批评往往来自当事人。Thesys 在 2025 年 3 月上线了 <b>C1</b>——一个基于 JSON 组件树的生成式 UI SDK：50+ 组件、能渲染半成品流的解析器、真实生产流量。它工作得很好。然后团队想让它<b>可交互</b>，JSON 开始处处与他们为敌。</p>
+  <blockquote class="reveal">「JSON 是一个<b>假装成语言的数据格式</b>。当你需要一个能取数据、管状态、响应输入的 UI 时，这个区别就不再是理论问题。」
+    <span class="en">"JSON is a data format pretending to be a language. When you need a UI that can fetch data, manage state, and respond to user input, that distinction stops being theoretical."</span>
+    <footer>——《Stop making AI write JSON》（Thesys Engineering，2026-04-10）</footer>
+  </blockquote>
+  <h3 class="reveal">JSON 的三次「叛变」</h3>
+  <div class="grid g3">
+    <div class="card reveal"><h4>① 数据被冻进输出里</h4><p><span class="mono" style="font-size:12px">"data": [120,150,180]</span> 一旦被模型写出来就定格了。想换数据？回模型。想加筛选？回模型。每一次交互都是一次完整的 LLM 往返。</p></div>
+    <div class="card reveal"><h4>② 语言特性被「对象化」</h4><p>一个三元表达式 <span class="mono" style="font-size:12px">a ? b : c</span> 要写成 <span class="mono" style="font-size:12px">{"$cond":{...},"$then":x,"$else":y}</span>；一个布尔表达式要嵌套三层的 <span class="mono">$or/$and</span>。模型把 token 花在括号与包装对象上，而不是界面设计上。</p></div>
+    <div class="card reveal"><h4>③ 结构错误会「污染全局」</h4><p>JSON 是一个整体文档。第 12 行少一个 <span class="mono">}</span>，后面 50 行全部作废。而 OpenUI Lang 每行自包含、括号在本行闭合——<b>解析错误只损失那一行</b>，还能用 linter 式诊断精准修。</p></div>
+  </div>
+  <h4 class="sub-t reveal">同一个 TODO 应用，两种写法：模型实际要生成的东西</h4>
+  <div class="tabs reveal" id="todo-tabs">
+    <button class="active" data-t="t-json">json-render（JSONL 补丁）<span class="cnt"> 12 行</span></button>
+    <button data-t="t-oui">OpenUI Lang<span class="cnt"> 7 行</span></button>
+  </div>
+  <div id="t-json" class="tab-panel active reveal">
+    <pre>{"op":"add","path":"/state","value":{"newTitle":"","todos":[]}}
+{"op":"add","path":"/root","value":"app"}
+{"op":"add","path":"/elements/app","value":{"type":"Stack","props":{"direction":"vertical"},"children":["header","input-row","todo-list","footer"]}}
+{"op":"add","path":"/elements/header","value":{"type":"CardHeader","props":{"title":"Todos"},"children":[]}}
+{"op":"add","path":"/elements/input-row","value":{"type":"Stack","props":{"direction":"horizontal"},"children":["title-input","add-button"]}}
+{"op":"add","path":"/elements/title-input","value":{"type":"Input","props":{"value":{"$bindState":"/newTitle"}},"children":[]}}
+{"op":"add","path":"/elements/add-button","value":{"type":"Button","props":{"label":"Add"},"on":{"press":{"action":"pushState","params":{"statePath":"/todos","value":{"title":{"$state":"/newTitle"},"completed":false}},"onSuccess":{"set":{"/newTitle":""}}}}},"children":[]}}
+{"op":"add","path":"/elements/todo-list","value":{"type":"Stack","props":{"direction":"vertical"},"repeat":{"statePath":"/todos"},"children":["todo-item"]}}
+{"op":"add","path":"/elements/todo-item","value":{"type":"Stack","props":{"direction":"horizontal"},"children":["todo-checkbox","todo-text"]}}
+{"op":"add","path":"/elements/todo-checkbox","value":{"type":"Checkbox","props":{"checked":{"$bindItem":"completed"}}},"children":[]}}
+{"op":"add","path":"/elements/todo-text","value":{"type":"Text","props":{"text":{"$item":"title"},"style":{"textDecoration":{"$cond":{"$item":"completed"},"$then":"line-through","$else":"none"}}},"children":[]}}
+{"op":"add","path":"/elements/footer","value":{"type":"Text","props":{"text":{"$template":"items left"}},"children":[]}}</pre>
+  </div>
+  <div id="t-oui" class="tab-panel reveal">
+    <pre>root = Stack([CardHeader("Todos"), Stack([Input("title", $title, "What needs to be done?"), submitBtn], "row"), tbl, footer])
+todos = Query("list_todos", {}, {rows: []})
+createResult = Mutation("create_todo", {title: $title})
+submitBtn = Button("Add", Action([@Run(createResult), @Run(todos), @Reset($title)]))
+openCount = @Count(@Filter(todos.rows, "completed", "==", false))
+tbl = Table([Col("Title", todos.rows.title), Col("Done", todos.rows.completed)])
+footer = TextContent("" + openCount + " items left", "small")</pre>
+    <div class="callout info" style="margin-top:14px"><b>注意差距不在语法糖：</b>左边 12 行 JSONL 补丁没有任何<em>实时数据</em>能力；右边 7 行不仅有真实 <span class="mono">Query</span> / <span class="mono">Mutation</span>，还负责了计数与清空表单。这就是团队所说的「省 token 是收据，不是原因」。</div>
+  </div>
+  <h3 class="reveal">更根本的账：把「取数据」交给模型是架构错误</h3>
+  <p class="body reveal">Thesys 另一篇博文《Your LLM is not a query engine》算了一笔账：在工具调用（tool-calling）循环里，模型同时干两件事——<b>理解意图</b>（它擅长的）与<b>搬数据</b>（它极不擅长的）。而且成本随「交互次数」而非「问题难度」增长：</p>
+  <div class="grid g3">
+    <div class="card reveal"><h4>📈 历史累积</h4><p>每轮都重发完整对话，其中包含之前所有工具结果。第 10 次筛选比第 1 次更贵，尽管操作完全相同。</p></div>
+    <div class="card reveal"><h4>📦 数据注入</h4><p>500 行聚合结果序列化后约 1–2 万 token，且此后每一轮都躺在上下文里。等于用最贵的通道搬运数据。</p></div>
+    <div class="card reveal"><h4>🎲 查询重推导</h4><p>查询每轮从零重写，都是新的采样。第 3 轮设的地区筛选，可能在第 7 轮静默丢失；而且用户读到的每个数字都被模型「重打过一遍」。</p></div>
+  </div>
+  <div class="vs reveal">
+    <div class="vs-col bad" id="vs-bad">
+      <h5>🔁 工具调用循环：把「最近 7 天」改成「30 天」</h5>
+      <div class="step" data-s="1"><span class="n">01</span>用户发出新请求<span class="cost">文本输入</span></div>
+      <div class="step" data-s="2"><span class="n">02</span>模型调用 #1：重写工具调用 / SQL<span class="cost">~1.2s · 重发全部历史</span></div>
+      <div class="step" data-s="3"><span class="n">03</span>工具执行，返回结果集<span class="cost">数据进入上下文</span></div>
+      <div class="step" data-s="4"><span class="n">04</span>模型调用 #2：解读结果、重新组织回答<span class="cost">~1.5s · 数字被重打一遍</span></div>
+      <div class="step" data-s="5"><span class="n">05</span>前端渲染新的文字 / 组件<span class="cost">总计 2 次模型调用</span></div>
+    </div>
+    <div class="vs-col good" id="vs-good">
+      <h5>⚡ 生成式 UI：模型只出场一次</h5>
+      <div class="step" data-s="1"><span class="n">01</span>用户切换下拉框<span class="cost">直接操作组件</span></div>
+      <div class="step" data-s="2"><span class="n">02</span><span class="mono">$days = "30"</span>，本地响应式状态更新<span class="cost">0 token</span></div>
+      <div class="step" data-s="3"><span class="n">03</span>运行时重跑<em>已声明</em>的 <span class="mono">Query</span><span class="cost">~100ms · 0 token · 不经模型</span></div>
+      <div class="step" data-s="4"><span class="n">04</span>表格与图表直接刷新，数字来自数据库<span class="cost">确定性重执行</span></div>
+      <div class="step" data-s="5"><span class="n">05</span>模型处理「意图」，运行时处理「交互」<span class="cost">用户读到的是原始数据</span></div>
+    </div>
+  </div>
+  <div class="demo-bar reveal" style="margin-top:0">
+    <button class="btn" id="vs-play">▶ 播放这次交互对比</button>
+    <span class="demo-stat" id="vs-note">点一下，看两条路径分别发生了什么</span>
+  </div>
+</section>
+<div class="divider"><hr></div>
+<!-- ============ 02 语言 ============ -->
+<section id="lang">
+  <div class="sec-head reveal"><span class="sec-no">02</span><h2>OpenUI Lang 解剖：夹在 JSON 与 JavaScript 之间的那块空地</h2></div>
+  <p class="sec-lede reveal">团队反复强调一个定位：<b>JSON 是假装成语言的数据格式，JavaScript 是能力过剩的语言</b>，而生成式 UI 需要的恰好在中间——看起来像代码（LLM 对代码有海量预训练），但受限得像数据格式（没有逃逸出口，没有 <span class="mono">while(true)</span>，不能 import 你没装的库）。</p>
+  <h3 class="reveal">2.1 语法：一行一条赋值</h3>
+  <p class="body reveal">语言只有一种语句形态：<span class="mono">identifier = Expression</span>。参数是<b>位置参数</b>，按 Zod schema 的 key 顺序映射；允许省略尾部可选参数；<b>允许前向引用</b>。另外有两类特殊语句：状态声明 <span class="mono">$name = default</span> 与数据语句 <span class="mono">name = Query(...) / Mutation(...)</span>。</p>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>表达式类型</th><th>语法</th><th>示例</th></tr>
+      <tr><td>组件调用</td><td class="mono">Type(arg1, arg2)</td><td class="mono">CardHeader("Q1 营收", "全部分区")</td></tr>
+      <tr><td>字符串 / 数字 / 布尔 / null</td><td class="mono">"text" · 42 · true · null</td><td class="mono">3.14</td></tr>
+      <tr><td>数组 / 对象</td><td class="mono">[a, b] · {key: value}</td><td class="mono">[col1, col2]</td></tr>
+      <tr><td>引用（前向引用允许）</td><td class="mono">identifier</td><td class="mono">chart</td></tr>
+      <tr><td>响应式状态</td><td class="mono">$identifier</td><td class="mono">$days</td></tr>
+      <tr><td>成员访问 / 列抽取</td><td class="mono">a.b.c</td><td class="mono">data.rows.revenue</td></tr>
+      <tr><td>内置函数</td><td class="mono">@Name(args)</td><td class="mono">@Sum(@Filter(rows,"open","==",true))</td></tr>
+      <tr><td>三元 / 算术 / 比较</td><td class="mono">a ? b : c · a + b · a == b</td><td class="mono">$show ? form : null</td></tr>
+      <tr><td>动作序列（按钮内）</td><td class="mono">Action([...])</td><td class="mono">Action([@Run(m), @Reset($title)])</td></tr>
+    </table>
+  </div>
+  <div class="callout warn reveal"><b>为什么「位置参数」很关键：</b>它把组件签名从「键值对」压缩成「一串值」，每行省下的引号与键名，乘以无数次生成就是真金白银。但它也把 Zod key 顺序变成了 ABI——改 schema 顺序 = 改语言协议。这是设计与代价的两面。</div>
+  <h4 class="sub-t reveal">同一个表格，四种线格式</h4>
+  <p class="body reveal">基准测试用同一个 LLM 输出、同一份 UI，分别序列化为四种格式。点击标签切换——注意 token 数字：</p>
+  <div class="tabs reveal" id="fmt-tabs">
+    <button class="active" data-t="f-oui">OpenUI Lang <span class="cnt">154 tok</span></button>
+    <button data-t="f-yaml">YAML <span class="cnt">316 tok</span></button>
+    <button data-t="f-vercel">Vercel JSON-Render <span class="cnt">340 tok</span></button>
+    <button data-t="f-c1">Thesys C1 JSON <span class="cnt">357 tok</span></button>
+  </div>
+  <div id="f-oui" class="tab-panel active reveal"><pre>root = Stack([title, tbl])
+title = TextContent("Employees (Sample)", "large-heavy")
+tbl = Table([Col("Name", names), Col("Department", departments), Col("Salary", salaries, "number"), Col("YoY change (%)", changes, "number")])
+names = ["Ava Patel", "Marcus Lee", "Sofia Ramirez", "Ethan Brooks", "Nina Chen"]
+departments = ["Engineering", "Sales", "Marketing", "Finance", "HR"]
+salaries = [132000, 98000, 105000, 118500, 89000]
+changes = [6.5, 4.2, 3.1, 5.0, 2.4]</pre></div>
+  <div id="f-yaml" class="tab-panel reveal"><pre>root: stack-1
+elements:
+  textcontent-2:
+    type: TextContent
+    props:
+      text: Employees (Sample)
+      size: large-heavy
+  table-3:
+    type: Table
+    props:
+      rows:
+        - [...]
+    children:
+      - col-4
+      - col-5
+      - col-6
+      - col-7
+  stack-1:
+    type: Stack
+    props: {}
+    children:
+      - textcontent-2
+      - table-3</pre></div>
+  <div id="f-vercel" class="tab-panel reveal"><pre>{"op":"add","path":"/root","value":"stack-1"}
+{"op":"add","path":"/elements/textcontent-2","value":{"type":"TextContent","props":{"text":"Employees (Sample)","size":"large-heavy"},"children":[]}}
+{"op":"add","path":"/elements/col-4","value":{"type":"Col","props":{"label":"Name","type":"string"},"children":[]}}
+{"op":"add","path":"/elements/col-5","value":{"type":"Col","props":{"label":"Department","type":"string"},"children":[]}}
+{"op":"add","path":"/elements/col-6","value":{"type":"Col","props":{"label":"Salary","type":"number"},"children":[]}}
+{"op":"add","path":"/elements/col-7","value":{"type":"Col","props":{"label":"YoY change (%)","type":"number"},"children":[]}}
+{"op":"add","path":"/elements/table-3","value":{"type":"Table","props":{"rows":[...]},"children":["col-4","col-5","col-6","col-7"]}}
+{"op":"add","path":"/elements/stack-1","value":{"type":"Stack","props":{},"children":["textcontent-2","table-3"]}}</pre></div>
+  <div id="f-c1" class="tab-panel reveal"><pre>{
+  "component": {
+    "component": "Stack",
+    "props": {
+      "children": [
+        { "component": "TextContent", "props": { "text": "Employees (Sample)", "size": "large-heavy" } },
+        { "component": "Table", "props": { "columns": [...], "rows": [...] } }
+      ]
+    }
+  },
+  "error": null
+}</pre></div>
+  <h3 class="reveal">2.2 内置函数：把「计算」留在运行时</h3>
+  <div class="grid g4">
+    <div class="card reveal"><h4><span class="tag">DATA</span></h4><p class="mono" style="font-size:12px">@Count @Sum @Avg @Min @Max @First @Last @Filter @Sort @Round @Abs @Floor @Ceil</p></div>
+    <div class="card reveal"><h4><span class="tag">ITER</span></h4><p class="mono" style="font-size:12px">@Each(array, varName, template)</p><p>按行渲染，循环变量仅在内联可用——这是「模板即表达式」的极简版。</p></div>
+    <div class="card reveal"><h4><span class="tag">ACTION</span></h4><p class="mono" style="font-size:12px">@Run(ref) @Set($v,val) @Reset($v...) @ToAssistant(msg) @OpenUrl(url)</p><p>动作按序执行；<span class="mono">@Run</span> 失败则跳过后续步骤。</p></div>
+    <div class="card reveal"><h4><span class="tag">DATA IO</span></h4><p class="mono" style="font-size:12px">Query(tool, args, defaults, refreshSec)<br>Mutation(tool, args)</p><p>Query 载入即执行并在 <span class="mono">$var</span> 变化时自动重取；Mutation 只由 <span class="mono">@Run</span> 触发。</p></div>
+  </div>
+  <div class="code-label reveal">可搜索、可排序的表格 · 全部逻辑在客户端，零模型往返</div>
+  <pre class="reveal">$search = ""
+$sortBy = "stars"
+data = Query("get_repos", {}, {rows: []})
+filtered = @Filter(data.rows, "name", "contains", $search)
+sorted = @Sort(filtered, $sortBy, "desc")
+searchBox = FormControl("Search", Input("search", "Filter repos...", "text", null, $search))
+sortSelect = FormControl("Sort by", Select("sortBy", [SelectItem("stars", "Stars"), SelectItem("forks", "Forks")], null, null, $sortBy))
+controls = Stack([searchBox, sortSelect], "row", "m")
+tbl = Table([Col("Name", sorted.name), Col("Stars", sorted.stars, "number"), Col("Forks", sorted.forks, "number")])
+emptyState = @Count(filtered) > 0 ? tbl : TextContent("No results match your search.")
+root = Stack([CardHeader("Repositories"), controls, emptyState])</pre>
+  <h3 class="reveal">2.3 增量编辑 = 重新赋值</h3>
+  <p class="body reveal">用户说「加一个只显示未完成的筛选器」。模型不需要重发整个应用——各语言变量「后定义覆盖先定义」，所以它<b>只重写改动的三行</b>，未提及的语句原样保留。这就是 OpenUI 的编辑模型：没有 RFC 6902，没有 JSON Pointer 算术，没有「编辑模式选择」。</p>
+  <div class="grid g2 reveal">
+    <div class="card"><h4>🔧 模型实际输出的补丁</h4><pre style="margin-top:8px;font-size:11.5px">$filter = "all"
+filterBar = Select("filter", $filter, [SelectItem("all", "All"), SelectItem("active", "Active"), SelectItem("completed", "Completed")])
+root = Stack([CardHeader("Todos"), inputRow, filterBar, tbl, footer])</pre></div>
+    <div class="card"><h4>📉 官方给出的收益</h4><p>整屏重生成 ≈ <b>400 token / 6.7s</b>；增量补丁 <b>3 条语句 / ≈80 token / 1.3s</b>。官方表述为「最多省 80% token、编辑快约 5 倍」。</p><div class="pill-row"><span class="pill">全量：~400 tok</span><span class="pill">增量：~80 tok</span></div></div>
+  </div>
+</section>
+<div class="divider"><hr></div>
+<!-- ============ 03 架构 ============ -->
+<section id="arch">
+  <div class="sec-head reveal"><span class="sec-no">03</span><h2>架构：四件套闭环，与「生成 / 执行」的切割</h2></div>
+  <p class="sec-lede reveal">OpenUI 的核心循环只有五步，但每一步都能替换：组件库用你的设计系统，提示由 schema 自动生成，解析器把流变成带类型的元素树，渲染器把树映射到你的组件。语言与渲染器<b>不依赖任何模型厂商、聊天库或托管服务</b>。</p>
+  <div class="diagram reveal">
+    <svg viewBox="0 0 980 250" font-family="sans-serif">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#9a9484"/></marker></defs>
+      <rect x="20" y="80" width="160" height="66" rx="11" fill="#fffefa" stroke="#d5cebd"/>
+      <text x="100" y="106" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1b17">组件库</text>
+      <text x="100" y="126" text-anchor="middle" font-size="10.5" fill="#6f6a5d">Zod schema + 你的组件</text>
+      <rect x="220" y="80" width="160" height="66" rx="11" fill="#fffefa" stroke="#d5cebd"/>
+      <text x="300" y="106" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1b17">系统提示</text>
+      <text x="300" y="126" text-anchor="middle" font-size="10.5" fill="#6f6a5d">签名 / 规则 / 示例自动生成</text>
+      <rect x="420" y="80" width="140" height="66" rx="11" fill="#c2410c"/>
+      <text x="490" y="112" text-anchor="middle" font-size="13.5" font-weight="800" fill="#fff">LLM / Agent</text>
+      <text x="490" y="130" text-anchor="middle" font-size="10.5" fill="#ffd9c2">任意厂商</text>
+      <rect x="600" y="80" width="160" height="66" rx="11" fill="#fbe9dd" stroke="#c2410c" stroke-width="1.4"/>
+      <text x="680" y="106" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">OpenUI Lang 流</text>
+      <text x="680" y="126" text-anchor="middle" font-size="10.5" fill="#c2410c">逐行 · 可前向引用</text>
+      <rect x="800" y="80" width="160" height="66" rx="11" fill="#fffefa" stroke="#d5cebd"/>
+      <text x="880" y="106" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1b17">解析器 → 渲染器</text>
+      <text x="880" y="126" text-anchor="middle" font-size="10.5" fill="#6f6a5d">React/Vue/Svelte/Angular</text>
+      <line x1="180" y1="113" x2="214" y2="113" stroke="#9a9484" stroke-width="1.6" marker-end="url(#a1)"/>
+      <line x1="380" y1="113" x2="414" y2="113" stroke="#9a9484" stroke-width="1.6" marker-end="url(#a1)"/>
+      <line x1="560" y1="113" x2="594" y2="113" stroke="#9a9484" stroke-width="1.6" marker-end="url(#a1)"/>
+      <line x1="760" y1="113" x2="794" y2="113" stroke="#9a9484" stroke-width="1.6" marker-end="url(#a1)"/>
+      <text x="490" y="40" text-anchor="middle" font-size="13" font-weight="800" fill="#1c1b17">「你的组件定义了模型能生成什么」</text>
+      <text x="490" y="190" text-anchor="middle" font-size="11.5" fill="#6f6a5d">生成阶段：一次</text>
+      <text x="490" y="210" text-anchor="middle" font-size="11.5" fill="#15803d" font-weight="700">执行阶段：无限次 · 不经模型 · 直接调你的工具（函数表或 MCP）</text>
+    </svg>
+    <div class="diag-cap">图 1 · OpenUI 核心循环：组件库驱动提示，提示驱动生成，渲染器承接执行</div>
+  </div>
+  <h4 class="sub-t reveal">解析流水线：六段，以及一个反直觉的工程结论</h4>
+  <p class="body reveal">解析器要在<b>每个流式分片</b>上运行，延迟极度敏感。它的流水线是：</p>
+  <pre class="reveal">autocloser → lexer → splitter → parser → resolver → mapper → ParseResult</pre>
+  <p class="body reveal">其中 <b>autocloser</b> 负责把「流到一半」的文本补成语法合法（补引号与括号），<b>resolver</b> 负责内联变量引用（即前向引用的「提升」）并检测循环引用；<span class="mono">splitter</span> 把 token 流切成 <span class="mono">id = expr</span> 语句。因为每个语句以深度为 0 的换行结束，所以<b>已完成的语句是不可变的</b>，可以缓存 AST，只重新解析末尾那条未完成的。这让整条流的解析从 O(N²) 降到 O(N)。</p>
+  <div class="callout violet reveal"><b>工程故事 · 他们把 Rust/WASM 解析器重写成了 TypeScript，然后快了 3 倍。</b>原因不是 Rust 不快，而是 <b>WASM ↔ JS 边界的税</b>：每次调用都要把字符串拷进 WASM 线性内存、把结果序列化成 JSON 字符串、再拷回来给 V8 反序列化。他们还试过 <span class="mono">serde-wasm-bindgen</span> 直接返回 JS 对象，结果<b>慢了 9–29%</b>——逐字段具象化反而制造了成百上千次细粒度跨界。</div>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>方案</th><th>单次调用（µs）</th><th>整条流总成本</th><th>备注</th></tr>
+      <tr><td>Rust/WASM + JSON 往返</td><td class="mono">20–61</td><td>基线</td><td>每次调用都付拷贝税</td></tr>
+      <tr><td>Rust/WASM + serde-wasm-bindgen</td><td class="mono">22–79</td><td class="lose">+9–29% 更慢</td><td>内部跨界次数更多</td></tr>
+      <tr><td>TypeScript（每个分片整串重解析）</td><td class="mono">9–19</td><td class="mono">69–840</td><td>无边界，但流式是 O(N²)</td></tr>
+      <tr class="hl-cell"><td>TypeScript + 语句级增量缓存</td><td class="mono">9–19</td><td class="mono">69–255</td><td>单次快 <b>2.2–4.6×</b>，整条流省 <b>2.6–3.3×</b></td></tr>
+    </table>
+  </div>
+  <h4 class="sub-t reveal">组件如何定义（TypeScript / Zod）</h4>
+  <pre class="reveal">import { defineComponent, createLibrary } from "@openuidev/react-lang";
+import { z } from "zod/v4";
+
+const StatCard = defineComponent({
+  name: "StatCard",
+  description: "显示一个指标标签与数值。",
+  props: z.object({ label: z.string(), value: z.string() }),  // key 顺序 = 位置参数顺序
+  component: ({ props }) =&gt; (&lt;div&gt;&lt;strong&gt;{props.label}&lt;/strong&gt;&lt;div&gt;{props.value}&lt;/div&gt;&lt;/div&gt;),
+});
+
+export const myLibrary = createLibrary({
+  root: "StatCard",              // 提示会强制模型以 root = StatCard(...) 开头
+  components: [StatCard],
+  componentGroups: [
+    { name: "Charts", components: ["BarChart", "LineChart"],
+      notes: ["- 对比用 BarChart，趋势用 LineChart。"] },
+  ],
+});</pre>
+  <p class="body reveal">提示生成器会把 schema 变成组件签名、语言规则、示例与流式指令。<span class="mono">root</span> 字段有双重作用：约束模型输出形态，同时让 <span class="mono">root</span> 语句排在流的最前面，界面外壳可以立刻渲染。官方给出的「给 LLM 写组件」最佳实践：schema 保持扁平、必需参数在前、组件命名要有区分度、库越小越好、用 <span class="mono">.ref</span> 组合而非深层嵌套、用 <span class="mono">componentGroups</span> 分组并附上使用提示。</p>
+  <h4 class="sub-t reveal">v0.1 → v0.5：从「静态生成」到「自带状态的应用」</h4>
+  <div class="timeline reveal">
+    <div class="tl-item"><div class="tl-date">v0.1</div><h5>静态 UI 生成</h5><p>只有组件树。像一段可渲染的数据，交互全靠宿主自己接。</p></div>
+    <div class="tl-item"><div class="tl-date">v0.5 (最新)</div><h5>响应式状态 · 查询 · 变更 · 内置函数</h5><p>引入 <span class="mono">$variables</span> 双向绑定、<span class="mono">Query</span>/<span class="mono">Mutation</span> 数据声明、<span class="mono">@builtins</span> 计算与 <span class="mono">Action</span> 组合。自此「模型生成接线，运行时执行交互」成立。</p></div>
+    <div class="tl-item"><div class="tl-date">提示特性开关</div><h5>toolCalls / bindings / editMode / inlineMode</h5><p>提示按开关裁剪：是否教模型用工具、是否启用 <span class="mono">$var</span>、是否启用增量编辑、是否允许模型「只回答文字不画 UI」。<span class="mono">bindings</span> 默认跟随 <span class="mono">toolCalls</span>。</p></div>
+  </div>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 04 演示 ============ -->
+<section id="demo">
+  <div class="sec-head reveal"><span class="sec-no">04</span><h2>亲手体验：看着一个界面「流」出来</h2></div>
+  <p class="sec-lede reveal">下面是一段真实的 OpenUI Lang 程序，被逐字「流」进页面。左边是正在到达的源码，右边是渲染结果。请注意两件事：<b>①</b> 第一行 <span class="mono">root</span> 一到，界面外壳就出来了，还没定义的子节点显示为骨架屏；<b>②</b> 生成结束后，切换「时间范围」下拉框——数据会重新查询并刷新图表，<span class="mono">0 token、不经模型</span>。</p>
+  <div class="demo reveal">
+    <div class="demo-bar">
+      <button class="btn" id="demo-play">▶ 开始流式生成</button>
+      <button class="btn ghost" id="demo-reset">重置</button>
+      <span class="demo-stat" id="demo-stat">就绪</span>
+      <span class="badge0" id="demo-badge" style="display:none">已就绪 · 试试切换下拉框</span>
+    </div>
+    <div class="demo-grid">
+      <div>
+        <div class="pane-label">OpenUI Lang · 流式输出</div>
+        <div class="demo-code" id="demo-code"></div>
+      </div>
+      <div>
+        <div class="pane-label">Renderer · 渐进渲染</div>
+        <div class="demo-preview"><div class="mock" id="demo-root"></div></div>
+      </div>
+    </div>
+    <div class="chart-note">这是一个教学用的极简渲染器（约 200 行 JS，内联在本页里）：它真的解析 Lang、真的做前向引用解析、真的执行 Query 并重算 <span class="mono">@Sum/@Avg/@Round</span>。它证明的不是「OpenUI 有多强」，而是「这套语言按行流式渲染」这件事本身有多么自然。</div>
+  </div>
+</section>
+<div class="divider"><hr></div>
+<!-- ============ 05 Token ============ -->
+<section id="token">
+  <div class="sec-head reveal"><span class="sec-no">05</span><h2>Token 基准：格式选择就是延迟与成本选择</h2></div>
+  <p class="sec-lede reveal">对生成式 UI 来说，输出 token 数直接换算成两件事：<b>Time-to-First-Render</b>（用户盯着骨架屏的时间）与<b>账单</b>（输出 token 通常是模型最贵的产物）。仓库内提供可复现的基准：7 个真实 UI 场景，用 <span class="mono">tiktoken</span>（GPT-5 编码器）测量。</p>
+  <div class="chart-card reveal">
+    <div class="chart-head">
+      <div><div class="chart-title">四种格式的 token 消耗 · 7 个场景</div><div class="chart-sub">GPT-5.2 @ temperature 0；同一份 UI 的四种序列化。点击图例可开关格式。</div></div>
+      <div class="seg" id="tok-mode">
+        <button class="on" data-m="abs">绝对 token</button>
+        <button data-m="rel">相对倍数</button>
+        <button data-m="sec">60 tok/s 秒数</button>
+      </div>
+    </div>
+    <div class="legend" id="tok-legend"></div>
+    <div class="chart-wrap" id="tok-chart"></div>
+    <div class="chart-note" id="tok-note"></div>
+  </div>
+  <div class="grid g3 reveal">
+    <div class="card"><div class="fact-num">−52.8<small>%</small></div><div class="fact-label">OpenUI Lang 总 token（4,800）对比 Vercel JSON-Render（10,180）</div></div>
+    <div class="card"><div class="fact-num">−47.4<small>%</small></div><div class="fact-label">对比 YAML（9,122）；单场景最高省 61.4%</div></div>
+    <div class="card"><div class="fact-num">3.04<small>×</small></div><div class="fact-label">contact-form 场景在 60 tok/s 下的渲染速度优势</div></div>
+  </div>
+  <div class="callout info reveal"><b>为什么 JSON-Render 比预想更重？</b>它为每个元素生成一条 <span class="mono">{"op":"add","path":"/elements/id","value":{...}}</span>，<span class="mono">op / path / value / type / props / children</span> 这些键在每个节点都重复一遍。界面越深，结构重复累积越严重——在七个场景里最高达到 OpenUI Lang 的 <b>3 倍</b> token。</div>
+  <h4 class="sub-t reveal">可靠性基准里的 token 现实（70 组件目录 · 1,104 次运行）</h4>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>指标</th><th>OpenUI</th><th>A2UI（Google）</th><th>json-render（Vercel）</th></tr>
+      <tr><td>系统提示 token（每次请求都发）</td><td class="hl-cell mono">5,031</td><td class="mono">12,610</td><td class="mono">7,651</td></tr>
+      <tr><td>每屏平均输出 token</td><td class="hl-cell mono">1,362</td><td class="mono">2,823</td><td class="mono">3,258</td></tr>
+      <tr><td>46 屏一轮成本（Claude Opus 4.8 牌价）</td><td class="hl-cell mono">$2.27</td><td class="mono">$5.85</td><td class="mono">$4.88</td></tr>
+      <tr><td>同口径成本倍数</td><td class="hl-cell">1×</td><td>2.6×</td><td>2.1×</td></tr>
+    </table>
+  </div>
+  <p class="body reveal">官方另一个容易被忽略的论点是：<b>更瘦的格式不仅省输出 token，还降低了后续轮次的上下文体积</b>——相同 100k 上下文窗口能装下更多轮对话，而语境里的 spec 体量约保持恒定（因为机器人后续只发 delta）。</p>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 06 可靠性 ============ -->
+<section id="reliability">
+  <div class="sec-head reveal"><span class="sec-no">06</span><h2>可靠性：基准分数、失败形状，与「怎么修」</h2></div>
+  <p class="sec-lede reveal">生成式 UI 把模型输出直接变成用户面前的界面，所以「结构是否有效」是一个可度量的工程指标。Thesys 在 46 个真实 brief 上，用 6 个前沿模型、每种格式每个 brief 跑 4 次，共计每格式 <b>1,104 次</b>运行，用各格式自己的官方提示生成器与解析器评分。</p>
+  <div class="chart-card reveal">
+    <div class="chart-head">
+      <div><div class="chart-title">结构有效率 · 按模型</div><div class="chart-sub">「有效」= 能解析、有 root、引用都能解析、无孤儿/虚构组件、props 与枚举合法、未截断，且组件数不低于 brief 要求数。</div></div>
+      <div class="legend" id="rel-legend"></div>
+    </div>
+    <div class="chart-wrap" id="rel-chart"></div>
+    <div class="chart-note">官方博文汇总口径：OpenUI 96.5% · A2UI 95.7% · json-render 80.2%；站点数据文件按 6 模型 1104 次运行逐模型值汇总约为 96.9% / 95.6% / 82.8%。两者略有差异，本图采用站点数据文件的逐模型值。</div>
+  </div>
+  <div class="grid g2">
+    <div class="chart-card reveal" style="margin-top:0">
+      <div class="chart-head"><div><div class="chart-title">屏幕越复杂，越容易崩</div><div class="chart-sub">按 brief 的需求条数分档（2–3 / 4–6 / 7–9 / 11–13 / 16–18）</div></div></div>
+      <div class="chart-wrap" id="den-chart"></div>
+      <div class="chart-note">json-render 下滑最快最远；OpenUI 在轻量档领先，最密集的两档 A2UI 反超一点。</div>
+    </div>
+    <div class="chart-card reveal" style="margin-top:0">
+      <div class="chart-head"><div><div class="chart-title">用户真正看到的是「白屏」吗？</div><div class="chart-sub">1,104 次运行中完全空白屏的数量（按各 SDK 自带渲染器的行为）</div></div></div>
+      <div class="chart-wrap" id="blank-chart"></div>
+      <div class="chart-note">A2UI 的默认渲染器只要 <span class="mono">updateComponents</span> 消息里有任何非法组件，就丢弃<b>整条消息</b>，于是白屏 35 次。代价的另一面是：OpenUI 用「部分渲染」替代白屏，而部分错更难被发现——所以官方把结构有效率单独列为指标。</div>
+    </div>
+  </div>
+  <h3 class="reveal">6.1 失败不是随机噪声，而是有固定形状</h3>
+  <p class="body reveal">Thesys 公布了一周真实生产流量的失败归因。值得注意的是：<b>失败是结构性的，不是语义性的</b>——模型自上而下规划界面，先列出一个 section 的子节点再定义它们，长输出里它可能忘了把成品 section 挂回 root，或者在一张表的最后几行耗尽预算。</p>
+  <div class="chart-card reveal">
+    <div class="chart-head"><div><div class="chart-title">首轮校验失败的原因分布</div><div class="chart-sub">约 7% 的生成在首次校验时失败</div></div></div>
+    <div class="chart-wrap" id="fail-chart"></div>
+  </div>
+  <div class="grid g3 reveal">
+    <div class="card"><div class="fact-num">96<small>%</small></div><div class="fact-label">OpenUI Gateway 在流式过程中修好了首次校验失败的生成（生产数据）</div></div>
+    <div class="card"><div class="fact-num">&lt;1<small>%</small></div><div class="fact-label">最终以破损状态到达用户的屏幕比例；官方目标是推向 0</div></div>
+    <div class="card"><div class="fact-num">1–3<small> 行</small></div><div class="fact-label">每次修复改动的中位行数——因为每行是一条具名语句，修复是局部的</div></div>
+  </div>
+  <div class="callout good reveal"><b>「修」而不是「求不出错」：</b>OpenUI 的策略是把校验器当作奖励信号。生产系统用一个小的 sanitizer 模型，只编辑报错的行，然后重新校验；因为每条语句都有名字、每行自包含，编辑天然是局部的。团队明说：<em>无论选哪种格式，规模上来后你都需要这层修复设施。</em></div>
+  <h4 class="sub-t reveal">Linter 式的错误信息</h4>
+  <pre class="reveal">{
+  "code": "unknown-component",
+  "statementId": "chart",
+  "message": "Unknown component \"DataTable\"",
+  "hint": "Available components: Card, Header, Table, Stack, PieChart, BarChart"
+}</pre>
+  <p class="body reveal">对照 JSON 的 <span class="mono">"unexpected token at position 4,523"</span>——前者可以原样回灌给模型，让它通过增量编辑精确重写那一行。团队把它总结为「生成的 UI 的 <span class="mono">eslint --fix</span>」。开发期有 DevTools 自动挂载并展示解析错误，生产期有 Reliability Monitoring 面板。</p>
+</section>
+<div class="divider"><hr></div>
+<!-- ============ 07 OUI-1 ============ -->
+<section id="oui1">
+  <div class="sec-head reveal"><span class="sec-no">07</span><h2>OUI-1：让「生成式 UI」跑在消费级显卡上的开源模型</h2></div>
+  <p class="sec-lede reveal">2026 年 9 月 8 日，Thesys 发布 <b>OUI-1</b>，称其为「世界上第一个生成式 UI 模型」。它是一个 <b>DiffusionGemma 26B-A4B</b> 微调版（总参 260 亿，仅 40 亿激活），在 <b>Generative UI Benchmark</b> 上从基座的 <b>13.0%</b> 提升到 <b>71.7%</b>，权重以 Apache 2.0 发布在 Hugging Face，可跑在 RTX 5090（FP8）。</p>
+  <div class="grid g4 reveal">
+    <div class="card"><div class="fact-num">71.7<small>%</small></div><div class="fact-label">基准得分，5.5× 于基座 DiffusionGemma（13.0%）</div></div>
+    <div class="card"><div class="fact-num">4B<small> active</small></div><div class="fact-label">26B 总参 / 4B 激活；同档参数下最高分</div></div>
+    <div class="card"><div class="fact-num">1.9<small> s</small></div><div class="fact-label">自蒸馏后 20 条轻量 brief 的生成耗时（此前 4.3s）</div></div>
+    <div class="card"><div class="fact-num">27</div><div class="fact-label">训练与验证覆盖的组件库数量</div></div>
+  </div>
+  <h3 class="reveal">7.1 为什么选扩散语言模型</h3>
+  <p class="body reveal">自回归模型逐 token 生成，瓶颈在显存带宽。DiffusionGemma 一次写一个 256 token 的块，从噪声出发、确定一个就提交一个；Google 报告在单张 H100 上超过 1000 tok/s，RTX 5090 上超过 700。这正好对上 Thesys 的硬约束：<b>界面要在一秒内生成、要可靠到能当软件用、要小到能本地跑</b>。</p>
+  <h3 class="reveal">7.2 「跷跷板」问题：两类错误此消彼长</h3>
+  <p class="body reveal">训练分两阶段。第一阶段监督微调（约 700 个由更大模型写的 Lang 示例，跳 7 个组件库，A100 上 LoRA），基准从 13.0% 升到 28.8%。但出现了一个反复出现的现象：<b>schema 错误与 wiring 错误像跷跷板，一次训练只能压下一头</b>。</p>
+  <div class="chart-card reveal">
+    <div class="chart-head"><div><div class="chart-title">监督微调阶段的「跷跷板」</div><div class="chart-sub">同一组件库上连续三次训练运行的错误计数</div></div></div>
+    <div class="chart-wrap" id="seesaw-chart"></div>
+  </div>
+  <p class="body reveal">更糟的是模型变慢了：同一批 20 条 brief，生成时间从 <b>1.6s 涨到 4.3s</b>。原因很有意思——基座快是因为输出短而通用（平均 22 token/语句）；微调后它写出真实的名称与数值（平均 32 token/语句），且需要约两倍的去噪步数才能提交每个 token。<b>他们教会了模型写出更有用的界面，却丢掉了 DiffusionGemma 最初的意义。</b></p>
+  <h3 class="reveal">7.3 转折点：把解析器当作奖励（自蒸馏）</h3>
+  <p class="body reveal">关键洞察是：OpenUI Lang 有<b>可验证的奖励</b>。解析器能判断结构是否有效，并在失败时指出确切的 schema 或 wiring 错误。于是模型可以当自己的老师：生成程序 → 用解析器筛选 → 近似正确的走一次「最小修复」→ 判官检查是否契合 brief → 通过者成为下一轮训练集。每轮 500 步，A100 上约 1–2 小时。</p>
+  <div class="timeline reveal">
+    <div class="tl-item"><div class="tl-date">Phase 1 · SFT</div><h5>学会写 OpenUI Lang</h5><p>13.0% → 28.8%（单组件库）；但速度 1.6s → 4.3s，且两类错误跷跷板。</p></div>
+    <div class="tl-item"><div class="tl-date">Phase 2 · 自蒸馏 + 修复</div><h5>用解析器做拒绝采样奖励</h5><p>速度回到 <b>1.9s</b>（尽管输出 token 比基座多 28%）；基准到 <b>57.1%</b>；schema 错误 292 → <b>76</b>，wiring 错误 971 → <b>484</b>——第一次两类同时下降。</p></div>
+    <div class="tl-item"><div class="tl-date">Phase 3 · 27 个组件库</div><h5>泛化：它学的是「生成界面」还是「一个库」？</h5><p>把同一套配方铺到 27 个组件库，得到 OUI-1。<b>跳库验证</b>：在训练中没见过的 AppLess 组件库上测 60 个请求，OUI-1 产出 55 个有效，基座只有 23 个。</p></div>
+  </div>
+  <h4 class="sub-t reveal">71.7% 处在什么位置？成本 × 有效率的全景</h4>
+  <p class="body reveal">下面这张散点把 31 个模型放在同一张图上：横轴是「生成 46 屏」的成本（对数刻度，API 牌价），纵轴是结构有效率。橙色阶毯线是 API 模型的帕累托前沿；紫色是自托管 / 未定价模型。<b>OUI-1 的关键不在于分数最高，而在于它以 4B 激活参数、可本地运行的身份，把「免费/自托管」这一档的分数从 13.0 拉到了 71.7。</b></p>
+  <div class="chart-card reveal">
+    <div class="chart-head">
+      <div><div class="chart-title">模型全景：有效率 vs 每 46 屏成本</div><div class="chart-sub">悬停查看细节；横轴对数刻度。紫色为自托管/未定价。</div></div>
+      <div class="seg" id="board-mode"><button class="on" data-m="all">全部</button><button data-m="pareto">只看帕累托前沿</button></div>
+    </div>
+    <div class="chart-wrap" id="board-chart"></div>
+    <div class="chart-note" id="board-note"></div>
+  </div>
+  <div class="callout violet reveal"><b>一个耐人寻味的对照：</b>同一次运行里，密集的 <b>Qwen3.8 27B</b> 拿到 78.8%，比 OUI-1 的 71.7% 高 7 个点；但 Qwen3.8 每个 token 都要动用 270 亿参数，而 OUI-1 只用 40 亿激活参数。官方结论是：<em>「下一个分数台阶需要稠密 27B」</em>——OUI-1 的赌注不是绝对最强，而是「在能塞进消费级硬件的那一档里，可靠性足够当软件用」。</div>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 08 生态 ============ -->
+<section id="ecosystem">
+  <div class="sec-head reveal"><span class="sec-no">08</span><h2>生态与工程量：它已经不是一个 demo</h2></div>
+  <p class="sec-lede reveal">一个框架能不能用，看的不是 README 的漂亮程度，而是包的边界、脚手架的完整度、以及有没有人把它放进生产。OpenUI 在这三方面都留下了可核查的痕迹。</p>
+  <div class="stat-strip reveal">
+    <div class="stat"><div class="v">9,897</div><div class="l">GitHub Stars<br>（2024-12 建仓，2026-03 公开发布）</div></div>
+    <div class="stat"><div class="v">693</div><div class="l">Forks · 仅 30 watchers<br>说明是「用」而非「围观」型项目</div></div>
+    <div class="stat"><div class="v">17</div><div class="l">npm 包（含 4 套框架运行时、CLI、devtools 等）</div></div>
+    <div class="stat"><div class="v">95</div><div class="l">文档页面 · 24 个 tag · MIT 协议</div></div>
+  </div>
+  <h4 class="sub-t reveal">npm 月度下载（2026-08-29 → 2026-09-27）</h4>
+  <div class="chart-card reveal">
+    <div class="chart-wrap" id="npm-chart"></div>
+    <div class="chart-note">注意下载量最高的不是 UI 层而是 <span class="mono">lang-core</span>（60.4 万/月）与 <span class="mono">react-lang</span>（53.7 万/月）——说明大量使用是「后端/边缘生成提示 + 前端渲染」，而不是整套采用聊天界面。</div>
+  </div>
+  <h4 class="sub-t reveal">包矩阵（节选）</h4>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>包</th><th>定位</th><th>备注</th></tr>
+      <tr><td class="mono">@openuidev/lang-core</td><td>框架无关的解析、提示生成、运行时求值</td><td>无 React/Vue/Svelte/Angular 依赖，可跑在 Edge</td></tr>
+      <tr><td class="mono">@openuidev/react-lang</td><td>React 组件库定义 + 提示生成 + 流式渲染</td><td>核心运行时</td></tr>
+      <tr><td class="mono">@openuidev/react-headless</td><td>自带聊天 UI 时使用</td><td>聊天状态、流式适配器、消息格式转换</td></tr>
+      <tr><td class="mono">@openuidev/react-ui</td><td>预制聊天布局 + 两套内置组件库</td><td>最快上手的整屏体验</td></tr>
+      <tr><td class="mono">@openuidev/vue-lang · svelte-lang · angular-lang</td><td>各框架运行时绑定</td><td>同一语言、不同前端</td></tr>
+      <tr><td class="mono">@openuidev/react-email</td><td>邮件 HTML 生成与导出</td><td>同一 spec 生成邮件</td></tr>
+      <tr><td class="mono">@openuidev/langchain</td><td>LangChain / LangGraph agent 集成</td><td>通过 AG-UI 流式输出</td></tr>
+      <tr><td class="mono">@openuidev/browser-bundle</td><td>CDN / iframe / 无构建嵌入</td><td>script + stylesheet 即用</td></tr>
+      <tr><td class="mono">@openuidev/a2ui</td><td>用 OpenUI Lang 组件负载实现 A2UI v1.0 协议</td><td>兼容 Google 的协议路线</td></tr>
+      <tr><td class="mono">@openuidev/cli</td><td>脚手架与提示/schema 生成</td><td><span class="mono">npx @openuidev/cli create</span></td></tr>
+      <tr><td class="mono">@openuidev/devtools</td><td>开发期 Inspect 小部件</td><td>自动挂载，展示解析错误</td></tr>
+    </table>
+  </div>
+  <h4 class="sub-t reveal">框架生态与采用者</h4>
+  <div class="grid g2 reveal">
+    <div class="card"><h4>🔌 官方集成</h4><p><b>assistant-ui</b>（把 OpenUI 程序渲染为 Tool UI）· <b>Lynx</b>（跳端，<span class="mono">@lynx-js/genui</span>）· <b>LangChain / LangGraph</b> · <b>Mastra</b>（AG-UI）。另有 Cookbook 与 630+ 个示例文件，覆盖 agent 框架、应用框架、设计系统、harness、A2UI 等目录。</p></div>
+    <div class="card"><h4>🏢 公开采用者（ADOPTERS.md）</h4><p>Standard Metrics、Entelligence.AI、GAIA（个人 AI 助手，用 Lang 在对话里直接渲染卡片与列表）、&facts（电商市场洞察）、Oodle（流式可组合的可观测性 UI：指标/日志/追踪/图表/时间线）、prox（产品支持，把手册变成可交互的排障器与计算器）、Productboard、Automatio AI。</p></div>
+  </div>
+  <div class="callout info reveal"><b>一个容易被忽略的工程信号：</b>仓库里有 <b>95 个文档页</b>、<b>86 个测试文件</b>、<b>17 个包</b>、<b>24 个发布 tag</b>，还有 changesets 自动发布、CLI e2e、context7 文档同步等 CI 工作流。这更像一个平台团队的作品，而非黑客松产物。</div>
+  <h4 class="sub-t reveal">从 0 到跑起来：真的只有两行</h4>
+  <pre class="reveal">npx @openuidev/cli@latest create --name genui-chat-app
+cd genui-chat-app && echo "OPENAI_API_KEY=sk-..." &gt; .env && npm run dev</pre>
+  <p class="body reveal">脚手架可选模板（<span class="mono">openui-cloud</span> 走 Gateway、<span class="mono">openui-self-hosted</span> 直连自有模型）与后端框架（default / vercel-ai-sdk / langgraph / vercel-eve）。要「只用语言、不要整屏聊天」也有一条清晰路径：定义组件 → 生成提示 → 发给任意模型 → 用 Renderer 渲染。</p>
+</section>
+<div class="divider"><hr></div>
+<!-- ============ 09 竞品 ============ -->
+<section id="compare">
+  <div class="sec-head reveal"><span class="sec-no">09</span><h2>竞品与地图：它在这个领域的准确位置</h2></div>
+  <p class="sec-lede reveal">讨论生成式 UI 时最常见的错误，是把两个相互独立的决策混为一谈：<b>传输</b>（UI 要出现在哪，谁拥有那个界面）与<b>生成方式</b>（agent 到底吐出什么）。Thesys 自己的 2026 年行业报告把生成方式切成三段——静态选择 / 声明式组合 / 开放式 HTML。</p>
+  <div class="diagram reveal">
+    <svg viewBox="0 0 980 210" font-family="sans-serif">
+      <text x="30" y="34" font-size="12.5" font-weight="800" fill="#6f6a5d">控制 ←</text>
+      <text x="860" y="34" font-size="12.5" font-weight="800" fill="#6f6a5d">→ 自由</text>
+      <rect x="30" y="50" width="280" height="96" rx="12" fill="#fffefa" stroke="#d5cebd"/>
+      <text x="170" y="82" text-anchor="middle" font-size="14" font-weight="800" fill="#1c1b17">① 静态选择</text>
+      <text x="170" y="104" text-anchor="middle" font-size="11.5" fill="#6f6a5d">模型只挑选你预建的组件</text>
+      <text x="170" y="124" text-anchor="middle" font-size="11" fill="#9a9484">每次新形态 = 一个新 PR</text>
+      <rect x="350" y="50" width="280" height="96" rx="12" fill="#fbe9dd" stroke="#c2410c" stroke-width="1.8"/>
+      <text x="490" y="82" text-anchor="middle" font-size="14" font-weight="800" fill="#9a3412">② 声明式组合 ← OpenUI</text>
+      <text x="490" y="104" text-anchor="middle" font-size="11.5" fill="#7c4a03">模型在你的目录上组合出 spec</text>
+      <text x="490" y="124" text-anchor="middle" font-size="11" fill="#c2410c">主流生产落点 · 竞争最激烈</text>
+      <rect x="670" y="50" width="280" height="96" rx="12" fill="#fffefa" stroke="#d5cebd"/>
+      <text x="810" y="82" text-anchor="middle" font-size="14" font-weight="800" fill="#1c1b17">③ 开放式 HTML</text>
+      <text x="810" y="104" text-anchor="middle" font-size="11.5" fill="#6f6a5d">模型直接写 HTML/CSS/JS</text>
+      <text x="810" y="124" text-anchor="middle" font-size="11" fill="#9a9484">沙箱 iframe · 5–10× token</text>
+      <text x="490" y="182" text-anchor="middle" font-size="11.5" fill="#6f6a5d">传输层则是另一根轴：<tspan font-weight="700">AG-UI</tspan>（你自己的前端）↔ <tspan font-weight="700">MCP-Apps</tspan>（他人的宿主，如 ChatGPT/Claude）。两者可同时使用。</text>
+    </svg>
+    <div class="diag-cap">图 2 · 生成方式的三段光谱。OpenUI 位于「声明式」这个拥挤但最实用的中段</div>
+  </div>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>维度</th><th>OpenUI</th><th>json-render（Vercel Labs）</th><th>A2UI（Google）</th><th>CopilotKit OpenGenUI</th></tr>
+      <tr><td>线格式</td><td class="hl-cell">行式 DSL</td><td>JSON Patch (RFC 6902) 流</td><td>JSON 消息（createSurface / updateComponents / updateDataModel）</td><td>注册 React 组件 + 自由 HTML/SVG iframe</td></tr>
+      <tr><td>Token</td><td class="hl-cell">1×</td><td>3×</td><td>3×</td><td>4×</td></tr>
+      <tr><td>60 tok/s 延迟</td><td class="hl-cell">4.9s</td><td>14.2s</td><td>14.2s</td><td>~20s</td></tr>
+      <tr><td>流式</td><td>是（逐行，可前向引用）</td><td>是（逐 patch）</td><td>是（结构/数据分离）</td><td>部分</td></tr>
+      <tr><td>输出一致性</td><td>是</td><td>是</td><td>是</td><td>否</td></tr>
+      <tr><td>组件来源</td><td class="hl-cell">内置库 + 自定义</td><td>库 + 自定义</td><td>仅自定义</td><td>无</td></tr>
+      <tr><td>内置数据获取</td><td class="hl-cell">是（Query/Mutation）</td><td>否（需外挂 hooks）</td><td>否</td><td>否</td></tr>
+      <tr><td>内置聊天 UI</td><td class="hl-cell">是</td><td>否</td><td>否</td><td>是</td></tr>
+      <tr><td>多端</td><td>Web · mobile · email</td><td>Web · PDF · email · 视频 · 终端 · R3F</td><td>Web · iOS · Android · Flutter</td><td>Web</td></tr>
+      <tr><td>协议</td><td>MIT</td><td>Apache 2.0</td><td>Apache 2.0</td><td>MIT</td></tr>
+    </table>
+  </div>
+  <div class="grid g2 reveal">
+    <div class="card"><h4>🥊 OpenUI 的真实优势</h4><p>① 单位 token 效率与 TTFR；② 每行自包含 → 失败是局部的、可修复的；③ 语言内建数据获取，不需要自己拼 hooks 与状态库；④ 官方运行时覆盖 React/Vue/Svelte/Angular，且 MIT。评测里 json-render 的失分有压倒性单一原因：959 个评分错误中 <b>929 个是引用图失败</b>（悬空或孤儿 element id）——扁平补丁注册表把每个父子关系都变成必须全局一致的字符串 id。</p></div>
+    <div class="card"><h4>🧊 json-render / A2UI 的反击点</h4><p>json-render 的差异性是<b>渲染面广度</b>：同一份 spec 可产出 Web、邮件、PDF、终端，这对「一次写、多处渲染」的产品很关键。A2UI 的差异性是<b>目录协商握手</b>与<b>原生渲染器</b>（Flutter、Angular、Lit），对需要原生 widget 的移动/桌面场景更合适。<b>OpenUI 目前赢在 Web 内的效率与可靠性，不赢在所有渲染目标的覆盖度。</b></p></div>
+  </div>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 10 争议 ============ -->
+<section id="debate">
+  <div class="sec-head reveal"><span class="sec-no">10</span><h2>争议、边界与诚实的坏消息</h2></div>
+  <p class="sec-lede reveal">一份合格的调研不能只有赞美。OpenUI 在 Hacker News 上被讨论过两轮（公开标准帖 34 分 / OUI-1 帖 62 分，65 条评论），批评集中在<b>产品哲学</b>而非实现质量上——而这些批评恰恰是这个方向最需要回答的问题。</p>
+  <div class="quote-wall reveal">
+    <div class="card"><p>「渲染出来的是<b>带数据的 div 汤</b>，这不是 Web 标准，也不该打着无障碍（a11y）的旗号。」</p><div class="who">— padolsey，HN</div></div>
+    <div class="card"><p>「别宣传『跳平台』然后把 React、React Native、Vue 列为你的平台。世界不是只有 JavaScript，至少现在还不是。」</p><div class="who">— tadfisher，HN（创始人回应：语言本身平台无关，解析器与渲染器开源，欢迎社区扩展到其他平台）</div></div>
+    <div class="card"><p>「你讨厌设计师每三个月改一次你爱用的 App 的 UI，逼你重新学？恭喜，现在你<b>每次打开都要重新学一遍</b>。」</p><div class="who">— raincole，HN</div></div>
+    <div class="card"><p>「（GenUI）这看起来<b>极其浪费</b>。它到底加了什么价值？」</p><div class="who">— mcmcmc，HN（官方回应：就像助手直接给答案，而不是让你翻一大段文字）</div></div>
+    <div class="card"><p>「生成式 UI 之所以没解决，是因为当前模型<b>没有品味</b>，只会生成同质化的 slop。这篇博客居然一张生成结果的截图都没有，全程谈基准。」</p><div class="who">— tracyhenry，HN</div></div>
+    <div class="card"><p>「<b>『Open』这个词已经被滥用到</b>，看到需要强调自己 Open 的软件我反而开始不信任它。」</p><div class="who">— trentor，HN（另一人回复：但它是 MIT 协议）</div></div>
+    <div class="card"><p>「这名字用得很不幸。有一个 W3C 社区组叫 OpenUI（open-ui.org），已经存在近十年了，在为 Web 做 UI 标准。」</p><div class="who">— Keithamus，HN · <b>命名冲突是事实</b></div></div>
+    <div class="card"><p>「Gen UI 不是用来建 Web 应用的框架。它是<b>让 LLM 在多轮对话里临时画界面</b>的 DSL——那些界面是丢弃式、一次性的可视化。」</p><div class="who">— piterrro，HN（社区把它当作最有价值的一次「定义澄清」）</div></div>
+  </div>
+  <h3 class="reveal">10.1 需要谨慎对待的四个点</h3>
+  <div class="grid g2">
+    <div class="card reveal"><h4>⚠️ 基准是「第一方自测」</h4><p>作者在基准脚注中主动披露：「我们造了 OpenUI Lang，所以请把它读作第一方基准，包括 70 组件目录来自我们自己的公开库这一事实。」数据、提示、原始输出都提交在 <span class="mono">generative-ui-bench</span> 仓库供独立复评——这比多数厂商诚实，但仍不是第三方评测。</p></div>
+    <div class="card reveal"><h4>⚠️ 「白屏少」≠「用户没看到错」</h4><p>官方自己指出：逐行失败让 OpenUI 用<b>部分渲染</b>替代白屏，而「部分错」往往比白屏更难被察觉。所以他们把结构有效率与白屏率分开报告。任何把这解读为「OpenUI 不会出错」的说法都是过度推论。</p></div>
+    <div class="card reveal"><h4>⚠️ 新 DSL vs 预训练优势</h4><p>社区质疑：引入全新 DSL 与 LLM 的预训练分布相悖（训练数据里有海量 HTML/React/JSON，几乎没有 OpenUI Lang）。官方的回答是双管齐下——用系统提示 + 丰富 few-shot 引导通用模型，以及用微调模型（OUI-1）把 DSL 变成母语。基准显示通用前沿模型在 Lang 上的结构有效率与 JSON 系基本持平，算是部分回答了这个问题。</p></div>
+    <div class="card reveal"><h4>⚠️ 生态与工程成熟度</h4><p>版本号仍在 0.x（react-ui 0.16.3、lang-core 0.3.0），出现过 peer 依赖窗口不一致、流式解析器与主解析器在重复 id 与多行三元表达式上的行为差异等 issue（如 #821、#1127）。releases 里 <span class="mono">devin-ai-integration</span> 机器贡献者频繁出现——自动化程度高，但也意味着 API 仍在快速变动。</p></div>
+  </div>
+  <div class="callout bad reveal"><b>还有一个不太浪漫但重要的细节：</b>仓库 README 顶部专门声明——「OpenUI 没有官方加密货币、代币或币。任何使用 OpenUI 名称的资产都与本项目无关。」一个开源框架需要在首页辟谣山寨币，本身就是 2026 年的时代注脚。</div>
+  <h3 class="reveal">10.2 那么，它到底适合谁？</h3>
+  <div class="tbl-wrap reveal">
+    <table class="dt">
+      <tr><th>场景</th><th>建议</th><th>理由</th></tr>
+      <tr><td>对话式数据分析 / 可筛选看板</td><td class="win">首选 OpenUI</td><td>模型生成一次接线，之后筛选刷新完全不烧 token、不走模型——这正是它设计的甜点。</td></tr>
+      <tr><td>产品内嵌、强设计系统的副驾驶</td><td class="win">首选 OpenUI</td><td>组件由你的 Zod schema 与设计系统定义，模型不能越界生成任意样式。</td></tr>
+      <tr><td>同一份 spec 要渲染成 Web + PDF + 邮件 + 终端</td><td>考虑 json-render</td><td>它的渲染面广度仍是最强的护城河。</td></tr>
+      <tr><td>需要原生 widget（Flutter / iOS / Android）</td><td>考虑 A2UI</td><td>目录协商与原生渲染器是它的主场。</td></tr>
+      <tr><td>一次性、探索性、创造性的可视化</td><td>开放式 HTML（沙箱内）</td><td>没有目录能装下它。官方推荐的做法是把 <span class="mono">GeneratedView</span> 这样的沙箱组件注册进声明式目录——<b>按子树</b>支付开放式生成的成本。</td></tr>
+      <tr><td>在别人的宿主里（ChatGPT/Claude）出现</td><td>MCP-Apps</td><td>这是传输层问题，与生成格式正交。</td></tr>
+    </table>
+  </div>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 11 结论 ============ -->
+<section id="conclusion">
+  <div class="sec-head reveal"><span class="sec-no">11</span><h2>启示：这份 repo 真正值得带走的三件事</h2></div>
+  <div class="grid g3">
+    <div class="card reveal"><h4>① 约束是一种接口设计</h4><p>「没人用 Python 去查数据库——不是因为它不够强，而是因为 SQL 让契约变得明确。」OpenUI Lang 的赌注是：给 LLM 一个<b>没有逃逸出口</b>的表示，比给它一门通用语言更可靠。这可以推广到任何「模型 → 结构化系统」的接口设计。</p></div>
+    <div class="card reveal"><h4>② 让模型退场的架构，往往更便宜也更准</h4><p>把「理解意图」与「搬运数据」拆开，是这个 repo 最有普适价值的一课：模型生成<b>声明</b>，运行时<b>执行</b>。用户的每个数字都来自数据库，而不是被模型复述一遍。这条原则与具体语言无关。</p></div>
+    <div class="card reveal"><h4>③ 可验证性是可训练性的前提</h4><p>OUI-1 的故事本质是：因为 Lang 每行自包含、解析器能给出精确诊断，所以「解析器」可以直接当奖励信号，把 13.0% 的基座拉到 71.7%。<b>先设计出可判定对错的输出格式，模型才可能靠自我博弈变强。</b></p></div>
+  </div>
+  <p class="big-claim reveal">如果生成式 UI 的未来是「模型只在需要思考时出场」，<br>那么 OpenUI 贡献的不是一门语言，<br>而是一份<em>关于「模型与运行时如何分工」的工程契约</em>。</p>
+</section>
+<div class="divider"><hr></div>
+
+<!-- ============ 12 参考 ============ -->
+<section id="refs">
+  <div class="sec-head reveal"><span class="sec-no">12</span><h2>参考来源</h2></div>
+  <p class="sec-lede reveal">一手材料优先：仓库内文档、官方基准数据文件、可复现的 benchmark 目录。社区与第三方材料用于交叉验证与批评。</p>
+  <div class="refs reveal">
+    <div class="ref-cat">一手 · 仓库</div>
+    <div class="ref">thesysdev/openui — README、包矩阵、对比表、Token 基准 · <a href="https://github.com/thesysdev/openui">github.com/thesysdev/openui</a></div>
+    <div class="ref">docs/content/docs/openui-lang/* — Syntax、Overview、Architecture、Defining Components、Patterns、Reliability、Interactivity、v0.5 规范</div>
+    <div class="ref">benchmarks/ — 7 场景 4 格式的可复现 token/延迟基准、converter 源码、schema 与系统提示快照</div>
+    <div class="ref">docs/lib/benchmark-data.ts — 可靠性基准与模型榜的单一数据源</div>
+    <div class="ref">ADOPTERS.md — 企业采用者与框架集成清单</div>
+    <div class="ref">thesysdev/generative-ui-bench — 46 brief、6 模型、1104 次运行的原始输出与评分脚本</div>
+    <div class="ref-cat">一手 · 官方博客</div>
+    <div class="ref">《Stop making AI write JSON — Why we built OpenUI》（2026-04-10）· <a href="https://www.openui.com/blog/stop-making-ai-write-json">openui.com</a></div>
+    <div class="ref">《The State of Generative UI in 2026: Transports, Formats, and Tradeoffs》（2026-06-10，Rabi Guha）</div>
+    <div class="ref">《Your LLM is not a query engine》（2026-07-23）— 工具循环 vs 生成式 UI 的架构论证</div>
+    <div class="ref">《Generative UI Reliability benchmark》（2026-08-17）— 96.5 / 95.7 / 80.2、白屏 1 / 35 / 4、失败归因</div>
+    <div class="ref">《Introducing OUI-1: world's first model for Generative UI》（2026-09-08）— DiffusionGemma 微调、自蒸馏</div>
+    <div class="ref">《Rewriting our Rust WASM Parser in TypeScript》（2026-03-13）— 边界税与 O(N²)→O(N) 流式解析</div>
+    <div class="ref">《SaaS 2.0: Beyond the Chatbar》（2026-04-07）— 从 chatbar 到内嵌 agentic SDK 的四阶段</div>
+    <div class="ref-cat">一手 · API / 产品</div>
+    <div class="ref">openui.com 文档站与 Playground · <a href="https://www.openui.com">openui.com</a></div>
+    <div class="ref">OpenUI Gateway 与 Autofix — 流式纠错、Provider 回退、Reliability Monitoring</div>
+    <div class="ref">Hugging Face：thesysdev/OUI-1（Apache 2.0 权重）</div>
+    <div class="ref-cat">社区 · 第三方</div>
+    <div class="ref">Hacker News《OpenUI: Open Standard for Generative UI》讨论（13 条评论，含创始人回应）· <a href="https://news.ycombinator.com/item?id=48770133">id=48770133</a></div>
+    <div class="ref">Hacker News《OUI-1: world's first model for Generative UI》讨论（65 条评论）· <a href="https://news.ycombinator.com/item?id=49613182">id=49613182</a></div>
+    <div class="ref">Vercel Labs json-render · <a href="https://github.com/vercel-labs/json-render">github.com/vercel-labs/json-render</a></div>
+    <div class="ref">Google A2UI · <a href="https://github.com/google/A2UI">github.com/google/A2UI</a>（v0.9.1 / v1.0 RC）</div>
+    <div class="ref">AG-UI 协议 · <a href="https://docs.ag-ui.com/">docs.ag-ui.com</a>；MCP-Apps（SEP-1865）· <a href="https://modelcontextprotocol.org/seps/1865">modelcontextprotocol.org</a></div>
+    <div class="ref">Google Research《Generative UI: LLMs are Effective UI Generators》（2025-11，含 PAGEN 数据集）</div>
+    <div class="ref">W3C OpenUI 社区组（同名，与本项目无关）· <a href="https://open-ui.org/">open-ui.org</a></div>
+    <div class="ref-cat">数据快照口径</div>
+    <div class="ref">GitHub 指标：stars 9,897 · forks 693 · watchers 30 · open issues 160 · 24 tags · 建仓 2024-12-02（数据截至 2026-09-29）</div>
+    <div class="ref">npm 月度下载：lang-core 603,545 · react-lang 536,942 · react-ui 179,611 · cli 52,282（2026-08-29 → 2026-09-27）</div>
+    <div class="ref">版本：react-ui 0.16.3 · lang-core 0.3.0 · cli 0.4.1 · server 0.1.0</div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <b>OpenUI · 深度调研</b>
+    <p>本页是对 <span class="mono">github.com/thesysdev/openui</span> 的独立调研与解读，非官方材料。数据与引言均来自公开的一手仓库文档、官方基准数据文件与社区讨论，链接见「参考来源」。所有数字都标注了口径与时间点；存在分歧处（如汇总可靠性分数）已同时给出两种口径。</p>
+    <div class="fine">单文件静态页面 · 内联 CSS/JS · 无外部依赖 · 图表由原生 SVG 生成 · 页面内演示使用一个约 200 行的教学级 OpenUI Lang 迷你解析器 · 调研时间 2026-09-29</div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   0. 通用
+   ============================================================ */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const p = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+  $('#progress').style.width = p + '%';
+}, {passive:true});
+
+const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }), {threshold:.06});
+$$('.reveal').forEach(e => io.observe(e));
+
+function wireTabs(id){
+  const g = document.getElementById(id); if (!g) return;
+  g.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    $$('button', g).forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const sibs = []; let n = g.nextElementSibling;
+    while (n && n.classList.contains('tab-panel')) { sibs.push(n); n = n.nextElementSibling; }
+    sibs.forEach(p => p.classList.toggle('active', p.id === b.dataset.t));
+  });
+}
+wireTabs('todo-tabs'); wireTabs('fmt-tabs');
+
+/* ============================================================
+   1. SVG 图表工具
+   ============================================================ */
+const SVGNS = 'http://www.w3.org/2000/svg';
+function S(tag, attrs={}){ const e = document.createElementNS(SVGNS, tag); for (const k in attrs){ if (attrs[k] !== null && attrs[k] !== undefined) e.setAttribute(k, attrs[k]); } return e; }
+function T(x, y, str, attrs={}){ const t = S('text', Object.assign({x, y}, attrs)); t.textContent = str; return t; }
+
+function groupedBars(container, o){
+  const W = 900, H = o.height || 360, L = o.padL || 58, R = 18, TT = 20, B = o.padB || 56;
+  const iw = W - L - R, ih = H - TT - B;
+  const vis = o.series.filter(s => !s.hidden);
+  const rawMax = o.ymax != null ? o.ymax : Math.max(1, ...vis.flatMap(s => s.values));
+  const gmax = o.ymax != null ? o.ymax : rawMax * 1.12;
+  const y = v => TT + ih - (v / gmax) * ih;
+  const s = S('svg', {viewBox: `0 0 ${W} ${H}`});
+  const ticks = o.ticks || 5;
+  for (let i = 0; i <= ticks; i++){
+    const v = gmax * i / ticks;
+    s.appendChild(S('line', {x1:L, y1:y(v), x2:W-R, y2:y(v), class:'grid'}));
+    s.appendChild(T(L-9, y(v)+4, o.tickFmt ? o.tickFmt(v) : Math.round(v), {class:'ylab', 'text-anchor':'end'}));
+  }
+  const gw = iw / o.cats.length;
+  const bw = Math.min(42, (gw * 0.72) / Math.max(1, vis.length));
+  o.cats.forEach((c, i) => {
+    const cx = L + gw * (i + .5);
+    const start = cx - (bw * vis.length) / 2;
+    vis.forEach((se, j) => {
+      const v = se.values[i];
+      const bx = start + j * bw + bw * 0.09, by = y(v);
+      const bh = Math.max(0, (TT + ih) - by);
+      const r = S('rect', {x:bx, y:by, width:bw*0.82, height:bh, rx:3, fill:se.color, class:'bar'});
+      const ti = S('title'); ti.textContent = se.name + ' · ' + c.label + ': ' + (o.fmt ? o.fmt(v) : v);
+      r.appendChild(ti); s.appendChild(r);
+      if (o.labels && vis.length <= 3) s.appendChild(T(bx + bw*0.41, by - 6, o.fmt ? o.fmt(v) : v, {class:'vlab','text-anchor':'middle'}));
+    });
+    s.appendChild(T(cx, H - B + 20, c.label, {class:'xlab','text-anchor':'middle'}));
+  });
+  s.appendChild(S('line', {x1:L, y1:TT+ih, x2:W-R, y2:TT+ih, class:'axis'}));
+  container.innerHTML = ''; container.appendChild(s);
+}
+
+function legendFor(container, series, rerender){
+  container.innerHTML = '';
+  series.forEach(se => {
+    const b = document.createElement('button');
+    b.className = se.hidden ? 'off' : '';
+    b.innerHTML = '<span class="sw" style="background:' + se.color + '"></span>' + se.name;
+    b.onclick = () => { se.hidden = !se.hidden; rerender(); };
+    container.appendChild(b);
+  });
+}
+
+function lineChart(container, o){
+  const W = 900, H = o.height || 300, L = 58, R = 18, TT = 20, B = 52;
+  const iw = W - L - R, ih = H - TT - B;
+  const ymin = o.ymin, ymax = o.ymax;
+  const y = v => TT + ih - ((v - ymin) / (ymax - ymin)) * ih;
+  const x = i => L + (iw / (o.cats.length - 1)) * i;
+  const s = S('svg', {viewBox: '0 0 ' + W + ' ' + H});
+  for (let i = 0; i <= 4; i++){
+    const v = ymin + (ymax - ymin) * i / 4;
+    s.appendChild(S('line', {x1:L, y1:y(v), x2:W-R, y2:y(v), class:'grid'}));
+    s.appendChild(T(L-9, y(v)+4, o.tickFmt ? o.tickFmt(v) : Math.round(v), {class:'ylab','text-anchor':'end'}));
+  }
+  o.cats.forEach((c, i) => s.appendChild(T(x(i), H - B + 22, c, {class:'xlab','text-anchor':'middle'})));
+  o.series.forEach(se => {
+    const d = se.values.map((v, i) => (i ? 'L' : 'M') + x(i) + ',' + y(v)).join(' ');
+    s.appendChild(S('path', {d, fill:'none', stroke:se.color, 'stroke-width':2.6, 'stroke-linecap':'round', 'stroke-linejoin':'round', 'stroke-dasharray':se.dash||null}));
+    se.values.forEach((v, i) => {
+      const c = S('circle', {cx:x(i), cy:y(v), r:4.2, fill:'#fffefa', stroke:se.color, 'stroke-width':2.4, class:'pt'});
+      const ti = S('title'); ti.textContent = se.name + ' · ' + o.cats[i] + ': ' + v + '%'; c.appendChild(ti); s.appendChild(c);
+    });
+  });
+  s.appendChild(S('line', {x1:L, y1:TT+ih, x2:W-R, y2:TT+ih, class:'axis'}));
+  container.innerHTML = ''; container.appendChild(s);
+}
+
+function hBars(container, items, o={}){
+  const W = 900, L = o.labelW || 190, R = 70, rowH = o.rowH || 40;
+  const H = items.length * rowH + 10;
+  const max = Math.max(1, ...items.map(i => i.value));
+  const iw = W - L - R;
+  const s = S('svg', {viewBox:'0 0 ' + W + ' ' + H});
+  items.forEach((it, i) => {
+    const yy = i * rowH + 6;
+    s.appendChild(T(L - 12, yy + rowH*0.55 + 4, it.label, {class:'xlab', 'text-anchor':'end'}));
+    const w = Math.max(2, (it.value / max) * iw);
+    const r = S('rect', {x:L, y:yy + 6, width:w, height:rowH*0.55, rx:6, fill:it.color || '#c2410c', class:'bar'});
+    const ti = S('title'); ti.textContent = it.label + ': ' + (o.fmt ? o.fmt(it.value) : it.value); r.appendChild(ti); s.appendChild(r);
+    s.appendChild(T(L + w + 10, yy + rowH*0.55 + 4, o.fmt ? o.fmt(it.value) : it.value, {class:'ylab', 'text-anchor':'start'}));
+  });
+  container.innerHTML = ''; container.appendChild(s);
+}
+
+/* ============================================================
+   2. Token 基准图
+   ============================================================ */
+const TOK_BASE = {openui:[148,231,294,1226,1195,540,1166], yaml:[316,464,762,2128,2230,1077,2145], vercel:[340,520,893,2247,2487,1244,2449], c1:[357,516,849,2261,2379,1205,2381]};
+const TOK_CATS = [{label:'simple-table'},{label:'chart-with-data'},{label:'contact-form'},{label:'dashboard'},{label:'pricing-page'},{label:'settings-panel'},{label:'e-commerce'}];
+const TOK_SERIES = [
+  {key:'openui', name:'OpenUI Lang', color:'#c2410c', hidden:false},
+  {key:'yaml', name:'YAML', color:'#1d4ed8', hidden:false},
+  {key:'vercel', name:'Vercel JSON-Render', color:'#6f6a5d', hidden:false},
+  {key:'c1', name:'Thesys C1 JSON', color:'#b45309', hidden:false}
+];
+let tokMode = 'abs';
+function currentTokSeries(){
+  return TOK_SERIES.map(s => {
+    const base = TOK_BASE.openui; let vals;
+    if (tokMode === 'abs') vals = TOK_BASE[s.key];
+    else if (tokMode === 'rel') vals = TOK_BASE[s.key].map((v, i) => +(v / base[i]).toFixed(2));
+    else vals = TOK_BASE[s.key].map(v => +(v / 60).toFixed(2));
+    return {name:s.name, color:s.color, values:vals, hidden:s.hidden};
+  });
+}
+function redrawTok(){
+  groupedBars($('#tok-chart'), {
+    cats: TOK_CATS, series: currentTokSeries(), height: 390,
+    ymax: tokMode === 'rel' ? 3.6 : (tokMode === 'sec' ? 42 : null),
+    fmt: v => tokMode === 'rel' ? v.toFixed(2) + '×' : (tokMode === 'sec' ? v.toFixed(1) + 's' : v),
+    tickFmt: v => tokMode === 'rel' ? v.toFixed(1) + '×' : (tokMode === 'sec' ? Math.round(v) + 's' : v),
+    padB: 58
+  });
+  const oui = TOK_BASE.openui.reduce((a,b)=>a+b,0);
+  const all = Object.values(TOK_BASE).reduce((a,arr)=>a+arr.reduce((x,y)=>x+y,0),0);
+  const notes = {
+    abs: 'OpenUI 合计 ' + oui.toLocaleString() + ' token；四格式合计 ' + all.toLocaleString() + '。',
+    rel: '以每个场景的 OpenUI 值为 1×；YAML / JSON 系普遍落在 2–3× 区间。',
+    sec: '按 60 tok/s 恒定吞吐估算；真实延迟还受 TTFT 与网络影响。'
+  };
+  $('#tok-note').textContent = notes[tokMode];
+}
+legendFor($('#tok-legend'), TOK_SERIES, redrawTok);
+redrawTok();
+$('#tok-mode').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  $$('button', $('#tok-mode')).forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); tokMode = b.dataset.m; redrawTok();
+});
+
+/* ============================================================
+   3. 可靠性基准图
+   ============================================================ */
+const REL_MODELS = ['GPT-5.6 Sol','Claude Opus 4.8','Kimi K3','Gemini 3.7 Flash','Qwen3.8 2.4T','Muse Spark 1.2','六模型汇总'];
+const REL_SERIES = [
+  {name:'OpenUI', color:'#c2410c', values:[99.5,98.9,96.2,98.9,91.8,96.2,96.9], hidden:false},
+  {name:'A2UI', color:'#1d4ed8', values:[96.2,99.5,95.7,94.0,91.3,96.7,95.6], hidden:false},
+  {name:'json-render', color:'#6f6a5d', values:[82.6,87.5,71.2,92.9,81.0,81.5,82.8], hidden:false}
+];
+function redrawRel(){
+  groupedBars($('#rel-chart'), {
+    cats: REL_MODELS.map(l => ({label:l})),
+    series: REL_SERIES.map(s => ({name:s.name, color:s.color, values:s.values, hidden:s.hidden})),
+    height: 370, ymax: 100, labels: false, padB: 64,
+    fmt: v => v + '%', tickFmt: v => Math.round(v) + '%'
+  });
+  legendFor($('#rel-legend'), REL_SERIES, redrawRel);
+}
+redrawRel();
+
+lineChart($('#den-chart'), {
+  cats: ['2–3 项','4–6','7–9','11–13','16–18'], ymin: 60, ymax: 102, height: 320,
+  tickFmt: v => Math.round(v) + '%',
+  series: [
+    {name:'OpenUI', color:'#c2410c', values:[100.0,99.6,98.8,91.1,90.6]},
+    {name:'A2UI', color:'#1d4ed8', values:[99.6,98.8,94.2,91.7,93.2], dash:'6 4'},
+    {name:'json-render', color:'#6f6a5d', values:[89.6,81.7,85.4,68.2,71.9], dash:'2 4'}
+  ]
+});
+
+hBars($('#blank-chart'), [
+  {label:'A2UI（Google）', value:35, color:'#1d4ed8'},
+  {label:'json-render（Vercel）', value:4, color:'#6f6a5d'},
+  {label:'OpenUI', value:1, color:'#c2410c'}
+], {labelW:200, rowH:52, fmt: v => v + ' / 1,104 次' });
+
+hBars($('#fail-chart'), [
+  {label:'无有效 root（多半是截断）', value:44, color:'#b91c1c'},
+  {label:'引用图（悬空/孤儿引用）', value:36, color:'#c2410c'},
+  {label:'枚举 / 类型 / 参数错误', value:16, color:'#b45309'},
+  {label:'截断', value:4, color:'#6f6a5d'}
+], {labelW:230, rowH:44, fmt: v => v + '%' });
+
+/* npm 下载 */
+hBars($('#npm-chart'), [
+  {label:'@openuidev/lang-core', value:603545, color:'#c2410c'},
+  {label:'@openuidev/react-lang', value:536942, color:'#e0703a'},
+  {label:'@openuidev/react-ui', value:179611, color:'#7c3aed'},
+  {label:'@openuidev/cli', value:52282, color:'#6f6a5d'}
+], {labelW:210, rowH:46, fmt: v => v.toLocaleString() + ' 次/月' });
+
+/* 跷跷板 */
+groupedBars($('#seesaw-chart'), {
+  cats: [{label:'运行 n'},{label:'运行 n+1'},{label:'运行 n+2'}],
+  series: [
+    {name:'schema 错误', color:'#b91c1c', values:[78,112,51]},
+    {name:'wiring 错误（孤儿 section）', color:'#1d4ed8', values:[66,40,65]}
+  ],
+  height: 300, ticks: 4, labels: true, padB: 46
+});
+
+/* ============================================================
+   4. 模型全景散点
+   ============================================================ */
+const BOARD = [
+  {n:'Grok 4.6', p:'xAI', s:99.5, c:0.85},
+  {n:'GPT-5.6 Sol', p:'OpenAI', s:99.5, c:2.19},
+  {n:'Claude Opus 4.8', p:'Anthropic', s:98.9, c:2.27},
+  {n:'Gemini 3.7 Flash', p:'Google', s:98.9, c:0.46},
+  {n:'Claude Sonnet 5', p:'Anthropic', s:98.4, c:0.93},
+  {n:'GPT-5.6 Terra', p:'OpenAI', s:98.4, c:1.11},
+  {n:'Kimi K3', p:'Moonshot', s:96.2, c:1.53},
+  {n:'Claude Opus 5', p:'Anthropic', s:96.2, c:3.56},
+  {n:'Muse Spark 1.2', p:'Meta', s:96.2, c:0.72},
+  {n:'Claude Sonnet 4.6', p:'Anthropic', s:92.9, c:2.07},
+  {n:'Qwen3.8 2.4T', p:'Alibaba', s:91.8, c:0.78},
+  {n:'GLM-5.3', p:'Zhipu', s:90.8, c:0.55},
+  {n:'Inkling Small', p:'Thinking Machines', s:88.6, c:0.15},
+  {n:'DeepSeek V4 Flash', p:'DeepSeek', s:85.8, c:0.02},
+  {n:'DeepSeek V4 Pro', p:'DeepSeek', s:84.2, c:0.41},
+  {n:'GPT-5.6 Luna', p:'OpenAI', s:83.7, c:0.10},
+  {n:'Qwen3.8 27B', p:'Alibaba', s:78.8, c:0.25},
+  {n:'Gemini 3.6 Flash', p:'Google', s:78.8, c:0.42},
+  {n:'Gemini 3.5 Flash-Lite', p:'Google', s:78.3, c:0.19},
+  {n:'Inkling', p:'Thinking Machines', s:73.4, c:0.37},
+  {n:'OUI-1（DiffusionGemma 26B-A4B 微调）', p:'Thesys', s:71.7, self:true},
+  {n:'Qwen3.6 27B', p:'Alibaba', s:68.5, c:0.29},
+  {n:'Qwen3.6 35B-A3B', p:'Alibaba', s:61.4, c:0.08},
+  {n:'Gemma 4 31B', p:'Google', s:46.7, c:0.04},
+  {n:'Phi-4', p:'Microsoft', s:44.0, c:0.02},
+  {n:'Gemma 4 26B-A4B', p:'Google', s:29.9, c:0.03},
+  {n:'Ministral 8B', p:'Mistral', s:27.2, c:0.04},
+  {n:'Granite 4.1 8B', p:'IBM', s:14.7, c:0.01},
+  {n:'LFM 2.5 2.6B', p:'Liquid', s:3.3, self:true},
+  {n:'DiffusionGemma 26B-A4B', p:'Google', s:13.0, self:true},
+  {n:'Ling 3.0 Tiny', p:'InclusionAI', s:9.8, self:true}
+];
+function drawBoard(mode){
+  const W = 900, H = 460, L = 60, R = 28, TT = 24, B = 56;
+  const iw = W - L - R, ih = H - TT - B;
+  const lx0 = -2.35, lx1 = 0.62; // log10 domain
+  const X = c => L + ((Math.log10(Math.max(c, Math.pow(10, lx0))) - lx0) / (lx1 - lx0)) * iw;
+  const y = s => TT + ih - ((s - 0) / 100) * ih;
+  const s = S('svg', {viewBox: '0 0 ' + W + ' ' + H});
+  for (let i = 0; i <= 5; i++){
+    const v = i * 20;
+    s.appendChild(S('line', {x1:L, y1:y(v), x2:W-R, y2:y(v), class:'grid'}));
+    s.appendChild(T(L-10, y(v)+4, v + '%', {class:'ylab','text-anchor':'end'}));
+  }
+  [0.01,0.05,0.1,0.5,1,2,4].forEach(c => {
+    s.appendChild(S('line', {x1:X(c), y1:TT, x2:X(c), y2:TT+ih, class:'grid', opacity:0.6}));
+    s.appendChild(T(X(c), TT+ih+22, '$' + c, {class:'ylab','text-anchor':'middle'}));
+  });
+  s.appendChild(T(W-R, TT+ih+44, '每 46 屏成本（对数刻度）', {class:'xlab','text-anchor':'end'}));
+  // pareto frontier over API models
+  const pts = BOARD.filter(m => !m.self).sort((a,b) => a.c - b.c);
+  let best = -1; const front = [];
+  pts.forEach(m => { if (m.s > best){ front.push(m); best = m.s; } });
+  const fd = front.map((m,i) => (i?'L':'M') + X(m.c) + ',' + y(m.s)).join(' ');
+  s.appendChild(S('path', {d:fd, fill:'none', stroke:'#c2410c', 'stroke-width':1.6, 'stroke-dasharray':'4 4', opacity:.55}));
+  // points
+  const selfX = X(Math.pow(10, lx0 + 0.18));
+  let selfIdx = 0;
+  BOARD.forEach(m => {
+    const api = !m.self;
+    const fade = (mode === 'pareto' && api && !front.includes(m));
+    if (mode === 'pareto' && m.self) return;
+    const cxx = api ? X(m.c) : selfX + (selfIdx++ % 2) * 16;
+    const cyy = y(m.s) + (api ? 0 : (selfIdx % 2 ? -6 : 6));
+    const isOUI = m.n.indexOf('OUI-1') === 0;
+    const col = api ? '#c2410c' : '#7c3aed';
+    if (isOUI) s.appendChild(S('circle', {cx:cxx, cy:cyy, r:10, fill:'none', stroke:'#7c3aed', 'stroke-width':2, opacity:.6}));
+    const c = S('circle', {cx:cxx, cy:cyy, r:isOUI?6.5:4.6, fill:col, stroke:'#fffefa', 'stroke-width':1.6, class:'pt', opacity: fade ? 0.13 : 1});
+    const ti = S('title');
+    ti.textContent = m.n + ' (' + m.p + ') — 有效率 ' + m.s + '%，' + (m.self ? '自托管/未定价' : '$' + m.c.toFixed(2) + ' / 46 屏');
+    c.appendChild(ti); s.appendChild(c);
+    if (isOUI) s.appendChild(T(cxx + 14, cyy + 4, 'OUI-1  71.7%', {class:'xlab','text-anchor':'start', 'font-weight':700, fill:'#7c3aed'}));
+    if (m.n === 'Qwen3.8 27B') s.appendChild(T(cxx + 10, cyy - 8, 'Qwen3.8 27B  78.8%', {class:'xlab','text-anchor':'start', fill:'#6f6a5d'}));
+    if (m.n === 'GPT-5.6 Sol') s.appendChild(T(cxx + 10, cyy - 8, 'GPT-5.6 Sol  99.5%', {class:'xlab','text-anchor':'start', fill:'#6f6a5d'}));
+    if (m.n === 'DiffusionGemma 26B-A4B') s.appendChild(T(cxx + 12, cyy + 4, 'DiffusionGemma  13.0%', {class:'xlab','text-anchor':'start', fill:'#7c3aed'}));
+  });
+  s.appendChild(S('line', {x1:L, y1:TT+ih, x2:W-R, y2:TT+ih, class:'axis'}));
+  s.appendChild(T(L, TT+ih+44, '紫色 = 自托管 / 未定价（横轴左端）', {class:'xlab','text-anchor':'start', fill:'#7c3aed'}));
+  $('#board-chart').innerHTML = ''; $('#board-chart').appendChild(s);
+  $('#board-note').textContent = mode === 'pareto'
+    ? '帕累托前沿：在该成本下有效率最高的 API 模型共 ' + front.length + ' 个（Grok 4.6 → GPT-5.6 Sol）。'
+    : '31 个模型。橙色阶毯线为 API 模型的帕累托前沿（' + front.length + ' 个点）；紫色为自托管/未定价。';
+}
+let boardMode = 'all';
+$('#board-mode').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  $$('button', $('#board-mode')).forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); boardMode = b.dataset.m; drawBoard(boardMode);
+});
+drawBoard('all');
+
+/* ============================================================
+   5. 工具循环 vs 生成式 UI 动画
+   ============================================================ */
+$('#vs-play').addEventListener('click', () => {
+  const bad = $$('#vs-bad .step'), good = $$('#vs-good .step');
+  const clear = sel => $$(sel + ' .step').forEach(s => s.classList.remove('on'));
+  clear('#vs-bad'); clear('#vs-good');
+  const note = $('#vs-note');
+  note.textContent = '2 次模型调用 vs 0 次模型调用';
+  const seq = [
+    [() => bad[0].classList.add('on'), 0],
+    [() => bad[1].classList.add('on'), 520],
+    [() => bad[2].classList.add('on'), 1100],
+    [() => bad[3].classList.add('on'), 1600],
+    [() => bad[4].classList.add('on'), 2200],
+    [() => good[0].classList.add('on'), 0],
+    [() => good[1].classList.add('on'), 60],
+    [() => good[2].classList.add('on'), 200],
+    [() => good[3].classList.add('on'), 340],
+    [() => good[4].classList.add('on'), 520],
+    [() => note.innerHTML = '工具循环：<b>2 次模型调用 + 结果集进入上下文</b>；生成式 UI：<b>0 token · ~100ms · 数据不经模型</b>', 2600]
+  ];
+  seq.forEach(([fn, t]) => setTimeout(fn, t));
+});
+
+/* ============================================================
+   6. 迷你 OpenUI Lang 解析器 + 流式渲染器（教学用）
+   ============================================================ */
+const PROGRAM = `$days = "7"
+metrics = Query("query_orders", {days: $days, groupBy: "region"}, {rows: []})
+root = Stack([header, filter, kpiRow, chart, tbl, footer])
+header = CardHeader("营收看板", "按地区 · 最近 " + $days + " 天")
+filter = FormControl("时间范围", Select("days", [SelectItem("7", "近 7 天"), SelectItem("30", "近 30 天"), SelectItem("90", "近 90 天")], null, null, $days))
+kpiRow = Stack([kpi1, kpi2, kpi3], "row", "m")
+kpi1 = Card([TextContent("总营收", "small"), TextContent("$" + @Round(@Sum(metrics.rows.revenue) / 1000, 1) + "k", "large-heavy")])
+kpi2 = Card([TextContent("订单数", "small"), TextContent("" + @Sum(metrics.rows.orders), "large-heavy")])
+kpi3 = Card([TextContent("平均客单价", "small"), TextContent("$" + @Round(@Avg(metrics.rows.revenue), 0), "large-heavy")])
+chart = Card([CardHeader("地区营收", "单位：美元"), BarChart(metrics.rows.region, [Series("营收", metrics.rows.revenue)])])
+tbl = Table([Col("地区", metrics.rows.region), Col("营收", metrics.rows.revenue, "number"), Col("订单", metrics.rows.orders, "number")])
+footer = TextContent("数据由本地运行时直接查询 · 未经过模型", "small")`.split('\n');
+
+const MB = {
+  '7': {rows:[{region:'北美',revenue:420000,orders:1200},{region:'欧洲',revenue:310000,orders:860},{region:'亚太',revenue:265000,orders:731}]},
+  '30': {rows:[{region:'北美',revenue:1780000,orders:5100},{region:'欧洲',revenue:1320000,orders:3720},{region:'亚太',revenue:1090000,orders:3180},{region:'拉美',revenue:520000,orders:1460}]},
+  '90': {rows:[{region:'北美',revenue:5240000,orders:15100},{region:'欧洲',revenue:3980000,orders:11240},{region:'亚太',revenue:3310000,orders:9860},{region:'拉美',revenue:1490000,orders:4280},{region:'中东',revenue:860000,orders:2310}]}
+};
+
+function splitTopLevel(s, seps){
+  const parts = []; let depth = 0, q = false, cur = '';
+  for (let i = 0; i < s.length; i++){
+    const c = s[i];
+    if (q){ cur += c; if (c === '"' && s[i-1] !== '\\') q = false; continue; }
+    if (c === '"'){ q = true; cur += c; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    if (depth === 0 && seps.includes(c)){ parts.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  parts.push(cur);
+  return parts;
+}
+function findTop(s, ch){
+  let depth = 0, q = false;
+  for (let i = 0; i < s.length; i++){
+    const c = s[i];
+    if (q){ if (c === '"' && s[i-1] !== '\\') q = false; continue; }
+    if (c === '"'){ q = true; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (depth === 0 && c === ch) return i;
+  }
+  return -1;
+}
+function splitFirstTop(s, seps){
+  let depth = 0, q = false;
+  for (let i = 0; i < s.length; i++){
+    const c = s[i];
+    if (q){ if (c === '"' && s[i-1] !== '\\') q = false; continue; }
+    if (c === '"'){ q = true; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (depth === 0 && seps.includes(c)) return [s.slice(0,i), c, s.slice(i+1)];
+  }
+  return null;
+}
+function unwrap(v){ return (v && typeof v === 'object' && v.__var) ? v.value : v; }
+function num(v){ v = unwrap(v); return typeof v === 'number' ? v : (parseFloat(v) || 0); }
+function addVals(a, b){
+  a = unwrap(a); b = unwrap(b);
+  if (typeof a === 'string' || typeof b === 'string') return String(a == null ? '' : a) + String(b == null ? '' : b);
+  return num(a) + num(b);
+}
+function resolveRef(id, scope){
+  if (scope.stmts.hasOwnProperty(id)) return evalExpr(scope.stmts[id], scope);
+  if (scope.vars.hasOwnProperty(id)) return scope.vars[id];
+  return {__pending:id};
+}
+function member(v, key){
+  if (v == null) return undefined;
+  if (Array.isArray(v)) return v.map(x => (x == null ? undefined : x[key]));
+  return v[key];
+}
+function evalCall(name, args, scope){
+  const A = args.map(unwrap);
+  switch (name){
+    case '@Count': return Array.isArray(A[0]) ? A[0].length : 0;
+    case '@Sum': return (A[0]||[]).reduce((a,b) => a + (+b||0), 0);
+    case '@Avg': return (A[0] && A[0].length) ? (A[0].reduce((a,b) => a + (+b||0), 0) / A[0].length) : 0;
+    case '@Round': { const d = A[1] == null ? 0 : A[1]; const f = Math.pow(10, d); return Math.round((+A[0]||0)*f)/f; }
+    case '@Min': return Math.min.apply(null, A[0]||[0]);
+    case '@Max': return Math.max.apply(null, A[0]||[0]);
+    case '@Filter': { const arr = A[0]||[], f = A[1], op = A[2], v = A[3];
+      return arr.filter(x => { const xv = x[f];
+        if (op === '==') return xv == v; if (op === '!=') return xv != v;
+        if (op === 'contains') return String(xv).indexOf(v) >= 0;
+        if (op === '>') return xv > v; if (op === '<') return xv < v; return false; }); }
+    case 'Query': { const dv = A[1] ? unwrap(A[1].days) : '7'; return MB[String(dv)] || MB['7']; }
+    case 'Series': return {__series:true, name:A[0], data:A[1]||[]};
+    case 'SelectItem': return {__item:true, value:A[0], label:A[1]};
+    case 'Col': return {__col:true, label:A[0], data:A[1]||[], type:A[2]};
+    default: return {__ui:true, name, args};
+  }
+}
+function evalAtom(raw, scope){
+  raw = raw.trim();
+  if (raw === '' || raw === 'null') return null;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  if (raw[0] === '"'){ try { return JSON.parse(raw); } catch(e){ return raw.slice(1,-1); } }
+  if (/^-?\d+(\.\d+)?$/.test(raw)) return parseFloat(raw);
+  if (raw[0] === '[' && raw[raw.length-1] === ']'){
+    const inner = raw.slice(1,-1);
+    if (!inner.trim()) return [];
+    return splitTopLevel(inner, ',').map(x => evalExpr(x, scope));
+  }
+  if (raw[0] === '{' && raw[raw.length-1] === '}'){
+    const o = {}; const inner = raw.slice(1,-1);
+    if (inner.trim()) splitTopLevel(inner, ',').forEach(p => {
+      const idx = findTop(p, ':'); if (idx < 0) return;
+      const k = p.slice(0, idx).trim().replace(/^"|"$/g, '');
+      o[k] = evalExpr(p.slice(idx+1), scope);
+    });
+    return o;
+  }
+  const ci = raw.indexOf('(');
+  if (ci > 0 && raw[raw.length-1] === ')'){
+    const name = raw.slice(0, ci).trim();
+    if (/^[@A-Za-z_][\w@]*$/.test(name)){
+      const inner = raw.slice(ci+1, -1);
+      const args = inner.trim() ? splitTopLevel(inner, ',').map(x => evalExpr(x, scope)) : [];
+      return evalCall(name, args, scope);
+    }
+  }
+  if (raw.startsWith('$')) return {__var: raw, value: scope.vars.hasOwnProperty(raw) ? scope.vars[raw] : undefined};
+  const parts = raw.split('.');
+  let base = resolveRef(parts[0].trim(), scope);
+  for (let i = 1; i < parts.length; i++) base = member(base, parts[i].trim());
+  return base;
+}
+function evalExpr(raw, scope){
+  raw = (raw || '').trim();
+  if (raw === '') return null;
+  let sf = splitFirstTop(raw, '+');
+  if (sf) return addVals(evalExpr(sf[0], scope), evalExpr(sf[2], scope));
+  sf = splitFirstTop(raw, '*/');
+  if (sf){ const a = num(evalExpr(sf[0], scope)), b = num(evalExpr(sf[2], scope)); return sf[1] === '*' ? a*b : (b ? a/b : 0); }
+  return evalAtom(raw, scope);
+}
+function splitAssign(line){
+  let depth = 0, q = false;
+  for (let i = 0; i < line.length; i++){
+    const c = line[i];
+    if (q){ if (c === '"' && line[i-1] !== '\\') q = false; continue; }
+    if (c === '"'){ q = true; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (c === '=' && depth === 0 && line[i+1] !== '=' && '=!<>'.indexOf(line[i-1]) < 0){
+      return [line.slice(0, i).trim(), line.slice(i+1).trim()];
+    }
+  }
+  return null;
+}
+function registerLine(line, scope){
+  const p = splitAssign(line); if (!p) return;
+  const id = p[0], expr = p[1];
+  if (id.startsWith('$')) scope.vars[id] = evalExpr(expr, scope);
+  else scope.stmts[id] = expr;
+}
+
+/* ---- 渲染 ---- */
+function el(tag, cls){ const d = document.createElement(tag); if (cls) d.className = cls; return d; }
+function renderNode(n, scope){
+  if (n === null || n === undefined) return document.createTextNode('');
+  if (Array.isArray(n)){ const f = document.createDocumentFragment(); n.forEach(x => f.appendChild(renderNode(x, scope))); return f; }
+  if (n.__pending){ const d = el('div','skel'); d.style.width = (50 + String(n.__pending).length * 9) + 'px'; return d; }
+  if (n.__series || n.__item || n.__col) return document.createTextNode('');
+  if (n.__ui) return renderComp(n, scope);
+  const t = el('span'); t.textContent = String(n); return t;
+}
+function renderComp(node, scope){
+  const a = node.args, name = node.name;
+  switch (name){
+    case 'Stack': {
+      const row = a[1] === 'row';
+      const d = el('div', 'm-stack' + (row ? ' row' : ''));
+      d.appendChild(renderNode(a[0], scope)); return d;
+    }
+    case 'Card': { const d = el('div','m-card'); d.appendChild(renderNode(a[0], scope)); return d; }
+    case 'CardHeader': {
+      const d = el('div');
+      const h = el('div','m-h'); h.textContent = String(unwrap(a[0]) == null ? '' : unwrap(a[0])); d.appendChild(h);
+      const sub = unwrap(a[1]);
+      if (sub){ const s = el('div','m-sub'); s.textContent = String(sub); d.appendChild(s); }
+      return d;
+    }
+    case 'TextContent': {
+      const size = unwrap(a[1]) || '';
+      const d = el('div', size === 'large-heavy' ? 'm-lg' : (size === 'small' ? 'm-small' : ''));
+      d.textContent = String(unwrap(a[0]) == null ? '' : unwrap(a[0])); return d;
+    }
+    case 'FormControl': {
+      const d = el('div','m-field');
+      const l = el('div','m-flabel'); l.textContent = String(unwrap(a[0]) == null ? '' : unwrap(a[0])); d.appendChild(l);
+      d.appendChild(renderNode(a[1], scope)); return d;
+    }
+    case 'Select': {
+      const items = a[1] || [];
+      const bindVar = a.find(x => x && typeof x === 'object' && x.__var);
+      const sel = document.createElement('select');
+      items.forEach(it => {
+        if (!it || !it.__item) return;
+        const o = document.createElement('option');
+        o.value = String(it.value); o.textContent = String(it.label);
+        if (bindVar && String(unwrap(bindVar)) === String(it.value)) o.selected = true;
+        sel.appendChild(o);
+      });
+      if (bindVar){
+        sel.onchange = () => {
+          const t0 = performance.now();
+          scope.vars[bindVar.__var] = sel.value;
+          renderRoot(scope);
+          const dt = Math.max(1, Math.round(performance.now() - t0));
+          $('#demo-stat').innerHTML = '本地重算：Query 重新执行 · <b>0 token</b> · ' + dt + ' ms';
+        };
+      }
+      return sel;
+    }
+    case 'Input': {
+      const inp = document.createElement('input');
+      inp.placeholder = String(unwrap(a[1]) == null ? '' : unwrap(a[1]));
+      inp.style.cssText = 'font-size:12px;padding:6px 8px;border:1px solid #d5cbb6;border-radius:7px;background:#fff;width:100%;max-width:220px;font-family:inherit';
+      return inp;
+    }
+    case 'Button': {
+      const b = document.createElement('button');
+      b.textContent = String(unwrap(a[0]) == null ? '' : unwrap(a[0]));
+      b.style.cssText = 'font-size:12px;padding:6px 12px;border:1px solid #c2410c;background:#fff;color:#c2410c;border-radius:7px;cursor:pointer;font-family:inherit';
+      return b;
+    }
+    case 'BarChart': {
+      const labels = a[0] || [];
+      const series = (a[1] || []).filter(x => x && x.__series);
+      const data = series.length ? (series[0].data || []) : [];
+      const max = Math.max(1, data.map(x => +x || 0).reduce((p, c) => Math.max(p, c), 0));
+      const bars = el('div','m-bars');
+      labels.forEach((lab, i) => {
+        const bw = el('div','m-barwrap');
+        const bar = el('div','m-bar');
+        bar.style.height = Math.max(5, ((+data[i] || 0) / max) * 78) + 'px';
+        const l = el('div','m-blab'); l.textContent = String(unwrap(lab) == null ? '' : unwrap(lab));
+        bw.appendChild(bar); bw.appendChild(l); bars.appendChild(bw);
+      });
+      const wrap = el('div'); wrap.appendChild(bars);
+      if (series.length){ const cap = el('div','m-small'); cap.style.marginTop = '6px'; cap.textContent = '系列：' + String(series[0].name); wrap.appendChild(cap); }
+      return wrap;
+    }
+    case 'Table': {
+      const cols = (a[0] || []).filter(x => x && x.__col);
+      const t = document.createElement('table');
+      const thead = document.createElement('thead'); const tr = document.createElement('tr');
+      cols.forEach(c => { const th = document.createElement('th'); th.textContent = String(c.label); tr.appendChild(th); });
+      thead.appendChild(tr); t.appendChild(thead);
+      const tb = document.createElement('tbody');
+      const rows = cols.length ? (cols[0].data || []).length : 0;
+      for (let r = 0; r < rows; r++){
+        const rtr = document.createElement('tr');
+        cols.forEach(c => {
+          const td = document.createElement('td');
+          let v = (c.data || [])[r];
+          if (c.type === 'number' && typeof v === 'number') v = v.toLocaleString();
+          td.textContent = v == null ? '' : String(v);
+          rtr.appendChild(td);
+        });
+        tb.appendChild(rtr);
+      }
+      t.appendChild(tb); return t;
+    }
+    default: { const d = el('div'); d.appendChild(renderNode(a[0], scope)); return d; }
+  }
+}
+function renderRoot(scope){
+  const host = $('#demo-root');
+  host.innerHTML = '';
+  host.appendChild(renderNode(resolveRef('root', scope), scope));
+}
+
+/* ---- 代码高亮 ---- */
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(line){
+  let s = escHtml(line);
+  s = s.replace(/"[^"]*"/g, m => '<span class="t-str">' + m + '</span>');
+  s = s.replace(/@[A-Za-z]+/g, m => '<span class="t-bi">' + m + '</span>');
+  s = s.replace(/\$[A-Za-z]+/g, m => '<span class="t-var">' + m + '</span>');
+  s = s.replace(/(^|[^A-Za-z0-9_.>])([A-Z][A-Za-z0-9]*)(?=\()/g, (m, p1, p2) => p1 + '<span class="t-comp">' + p2 + '</span>');
+  return s;
+}
+
+/* ---- 流式控制器 ---- */
+const demoScope = {stmts:{}, vars:{}};
+let doneLines = [], cur = '', streamTimer = null;
+function paint(){
+  const box = $('#demo-code');
+  box.innerHTML = doneLines.map(l => '<div>' + hl(l) + '</div>').join('')
+    + (cur !== '' ? '<div>' + hl(cur) + '<span class="caret"></span></div>' : '');
+  box.scrollTop = box.scrollHeight;
+}
+function resetDemo(){
+  clearInterval(streamTimer);
+  demoScope.stmts = {}; demoScope.vars = {};
+  doneLines = []; cur = ''; paint();
+  $('#demo-root').innerHTML = '';
+  $('#demo-play').disabled = false;
+  $('#demo-stat').textContent = '就绪';
+  $('#demo-badge').style.display = 'none';
+}
+function startStream(){
+  resetDemo();
+  const t0 = performance.now();
+  let li = 0, ci = 0;
+  $('#demo-play').disabled = true;
+  streamTimer = setInterval(() => {
+    if (li >= PROGRAM.length){
+      clearInterval(streamTimer);
+      $('#demo-play').disabled = false;
+      const chars = PROGRAM.join('\n').length;
+      $('#demo-stat').innerHTML = '完成 · ' + PROGRAM.length + ' 条语句 · ' + Math.round(performance.now() - t0) + ' ms · 约 ' + Math.round(chars/4) + ' token';
+      $('#demo-badge').style.display = 'inline-block';
+      return;
+    }
+    const line = PROGRAM[li];
+    ci += 2 + Math.floor(Math.random() * 3);
+    if (ci >= line.length){
+      registerLine(line, demoScope);
+      doneLines.push(line); cur = ''; li++; ci = 0;
+      renderRoot(demoScope); paint();
+      const chars = doneLines.join('\n').length;
+      $('#demo-stat').innerHTML = '流式生成中… 第 <b>' + doneLines.length + '</b> / ' + PROGRAM.length + ' 条 · 约 ' + Math.round(chars/4) + ' token · ' + Math.round(performance.now() - t0) + ' ms';
+    } else {
+      cur = line.slice(0, ci); paint();
+    }
+  }, 26);
+}
+$('#demo-play').addEventListener('click', startStream);
+$('#demo-reset').addEventListener('click', resetDemo);
+resetDemo();
+
+</script>
+</body>
+</html>

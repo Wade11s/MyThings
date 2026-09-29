@@ -7,6 +7,7 @@
 | 文件夹 | 内容 | 链接 |
 |---|---|---|
 | `Jev/` | Jev 模型深度调研 · 单文件交互式网页 | [/Jev/](https://wade11s.github.io/MyThings/Jev/) |
+| `OpenUI/` | OpenUI 生成式 UI 框架深度调研 · 交互图表 + 流式渲染演示 | [/OpenUI/](https://wade11s.github.io/MyThings/OpenUI/) |
 
 ## 新增一个网页文件夹
 
