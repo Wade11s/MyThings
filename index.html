@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyThings</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fffefa;--ink:#1c1b17;--muted:#6f6a5d;--line:#e4ded0;--accent:#c2410c}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;padding:80px 24px}
+.wrap{max-width:680px;margin:0 auto}
+h1{font-size:42px;letter-spacing:.02em}
+.sub{color:var(--muted);margin:8px 0 48px}
+a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 28px;margin-bottom:16px;text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s}
+a.card:hover{box-shadow:0 6px 24px rgba(30,25,15,.08);transform:translateY(-2px)}
+.card h2{font-size:20px}
+.card h2 span{color:var(--accent)}
+.card p{color:var(--muted);font-size:14px;margin-top:6px}
+.card .go{color:var(--accent);font-size:13px;margin-top:12px}
+footer{margin-top:48px;color:#9a9484;font-size:13px}
+code{background:#efeadf;border-radius:5px;padding:2px 7px;font-size:.9em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>MyThings</h1>
+  <p class="sub">个人网页合集 · 由 GitHub Pages 托管</p>
+
+  <a class="card" href="Jev/">
+    <h2>Jev <span>→</span></h2>
+    <p>Jev 模型深度调研：首个「系统一模型」的单文件交互式解读网页</p>
+    <div class="go">wade11s.github.io/MyThings/Jev/</div>
+  </a>
+
+  <footer>
+    新增文件夹：放入 <code>index.html</code> 后 <code>git push</code>，约 1 分钟生效。
+  </footer>
+</div>
+</body>
+</html>
