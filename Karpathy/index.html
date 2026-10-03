@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karpathy 最新长推深度解析 — 当输出格式决定你的理解速度</title>
+<style>
+:root{
+  --paper:#f6f4ef; --paper2:#fffdf8; --card:#fffefa;
+  --ink:#1c1b17; --ink2:#35322b; --muted:#6f6a5d; --faint:#9a9484;
+  --line:#e4ded0; --line2:#d5cebd;
+  --accent:#c2410c; --accent-dark:#9a3412; --accent-soft:#fbe9dd;
+  --blue:#1d4ed8; --blue-soft:#e3ebfd;
+  --green:#15803d; --green-soft:#e2f3e7;
+  --amber:#b45309; --amber-soft:#faeeda;
+  --red:#b91c1c; --red-soft:#fbe5e5;
+  --violet:#6d28d9; --violet-soft:#f0e9fe;
+  --dark:#121410; --dark2:#1a1d17; --dark-line:rgba(255,255,255,.09);
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- progress & nav ---------- */
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),#f97316);z-index:1000}
+nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,239,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1160px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--serif);font-weight:900;font-size:20px;letter-spacing:.5px;color:var(--ink);white-space:nowrap}
+.nav-logo em{color:var(--accent);font-style:normal}
+.nav-links{display:flex;gap:4px;flex-wrap:wrap}
+.nav-links a{color:var(--muted);font-size:13px;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
+@media(max-width:900px){.nav-links{display:none}}
+
+/* ---------- hero ---------- */
+header.hero{background:radial-gradient(1200px 600px at 70% -10%,#f1e6d2 0%,transparent 55%),radial-gradient(900px 500px at 15% 110%,#f5e2d0 0%,transparent 50%),var(--paper);padding:140px 24px 80px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+header.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(28,27,23,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(28,27,23,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(800px 500px at 50% 40%,#000 30%,transparent 75%);pointer-events:none}
+.hero-inner{max-width:1160px;margin:0 auto;position:relative}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:13px;letter-spacing:2px;color:var(--accent-dark);border:1px solid rgba(194,65,12,.35);background:var(--accent-soft);padding:6px 14px;border-radius:999px;margin-bottom:26px}
+.hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#f97316;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+h1.hero-title{font-family:var(--serif);font-size:clamp(38px,6.4vw,82px);font-weight:900;line-height:1.06;letter-spacing:.01em}
+h1.hero-title em{color:var(--accent);font-style:normal}
+h1.hero-title .sub{display:block;font-size:clamp(19px,2.9vw,30px);font-weight:600;color:#4a463c;margin-top:14px;letter-spacing:.04em}
+.hero-desc{max-width:780px;margin-top:24px;color:var(--ink2);font-size:17px}
+.hero-desc b{color:var(--ink);font-weight:600}
+.hero-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
+.chip{border:1px solid var(--line2);background:#fffefa;border-radius:10px;padding:10px 16px;font-size:13px;color:var(--muted)}
+.chip b{display:block;font-family:var(--mono);font-size:19px;color:var(--accent-dark);font-weight:700}
+.chip span.unit{font-size:12px;color:var(--faint)}
+
+/* ---------- layout ---------- */
+main{max-width:1160px;margin:0 auto;padding:0 24px}
+section{padding:78px 0 26px}
+.sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+.sec-no{font-family:var(--mono);font-size:14px;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:2px 10px;font-weight:700;white-space:nowrap}
+h2{font-family:var(--serif);font-size:clamp(26px,3.8vw,40px);font-weight:900;letter-spacing:.02em}
+.sec-lede{color:var(--muted);max-width:860px;font-size:16.5px;margin-bottom:36px}
+.sec-lede b{color:var(--ink2)}
+h3{font-family:var(--serif);font-size:21px;font-weight:800;margin:42px 0 14px;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:8px;height:22px;background:var(--accent);border-radius:2px;flex:none}
+h4{font-family:var(--serif);font-size:17px;font-weight:800;margin:22px 0 8px}
+p.body{margin-bottom:15px;max-width:900px;color:var(--ink2)}
+p.body b{color:var(--ink)}
+ul.blist{max-width:900px;margin:0 0 16px 22px;color:var(--ink2)}
+ul.blist li{margin-bottom:8px}
+ul.blist li b{color:var(--ink)}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- cards ---------- */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:960px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.card h4{margin-top:0}
+.card p{color:var(--muted);font-size:14.5px}
+.card .num{font-family:var(--mono);font-size:12px;color:var(--faint)}
+
+/* ---------- tweet card ---------- */
+.tweet{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0;overflow:hidden;box-shadow:0 8px 30px rgba(30,25,15,.06)}
+.tweet-head{display:flex;align-items:center;gap:14px;padding:22px 26px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffefa,#fdfaf3)}
+.avatar{width:52px;height:52px;border-radius:50%;flex:none;background:linear-gradient(135deg,#c2410c,#f97316);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:900;font-size:22px}
+.who .name{font-weight:800;font-size:16.5px;display:flex;align-items:center;gap:6px}
+.who .name svg{flex:none}
+.who .handle{font-family:var(--mono);font-size:13px;color:var(--faint)}
+.tweet-body{padding:26px;font-family:var(--mono);font-size:14.2px;line-height:1.9;white-space:pre-wrap;color:var(--ink2);max-height:none;overflow:auto}
+.tweet-foot{display:flex;gap:26px;flex-wrap:wrap;padding:16px 26px;border-top:1px solid var(--line);background:#fbf8f1;font-size:13px;color:var(--muted)}
+.tweet-foot b{font-family:var(--mono);color:var(--accent-dark)}
+.fold{background:none;border:none;font-family:var(--mono);font-size:12px;color:var(--accent);cursor:pointer;padding:10px 26px;display:block;width:100%;text-align:left;border-top:1px dashed var(--line2)}
+
+/* ---------- ladder (输出格式阶梯) ---------- */
+.ladder{display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.rung{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+.rung:hover{border-color:var(--line2);transform:translateX(3px)}
+.rung.on{border-color:var(--accent);background:#fff9f4;box-shadow:0 6px 20px rgba(194,65,12,.08)}
+.rung.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),#f97316)}
+.rung .lv{font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;background:var(--faint);border-radius:6px;padding:3px 9px;flex:none}
+.rung[data-lv="1"] .lv{background:#94a3b8}
+.rung[data-lv="2"] .lv{background:var(--blue)}
+.rung[data-lv="3"] .lv{background:var(--violet)}
+.rung[data-lv="4"] .lv{background:var(--accent)}
+.rung .tt{font-weight:700;font-size:15.5px}
+.rung .ds{color:var(--muted);font-size:13.5px;margin-left:auto;text-align:right;max-width:46%}
+@media(max-width:700px){.rung{flex-direction:column;align-items:flex-start;gap:6px}.rung .ds{margin-left:0;text-align:left;max-width:100%}}
+.rung-panel{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:26px 28px;display:none}
+.rung-panel.on{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.rung-panel .why{color:var(--muted);font-size:15px;margin-bottom:18px}
+
+/* ---------- code / prompt ---------- */
+pre{background:var(--dark);color:#e6e3d9;border-radius:12px;padding:18px 20px;overflow:auto;font-family:var(--mono);font-size:13.2px;line-height:1.75;margin:0 0 16px;border:1px solid var(--dark-line)}
+pre.light{background:#f3efe6;color:var(--ink2);border-color:var(--line2)}
+pre .k{color:#f0abfc}
+pre .s{color:#86efac}
+pre .c{color:#8b8778;font-style:italic}
+code{font-family:var(--mono);font-size:.9em;background:#efeadf;border-radius:5px;padding:1.5px 6px;color:var(--ink2)}
+pre code{background:none;padding:0;color:inherit}
+.prompt-label{font-family:var(--mono);font-size:11.5px;letter-spacing:1.4px;color:var(--faint);margin-bottom:7px;text-transform:uppercase}
+.copybtn{float:right;background:none;border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:11px;border-radius:6px;padding:2px 9px;cursor:pointer;position:relative;top:-4px}
+.copybtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- before / after ---------- */
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+@media(max-width:760px){.ba{grid-template-columns:1fr}}
+.ba .side{border-radius:14px;padding:20px 22px;border:1px solid var(--line)}
+.ba .bad{background:var(--red-soft);border-color:#f0c9c9}
+.ba .good{background:var(--green-soft);border-color:#c3e3cd}
+.ba .side .tag{font-family:var(--mono);font-size:11px;letter-spacing:1.2px;margin-bottom:10px;display:block}
+.ba .bad .tag{color:var(--red)}
+.ba .good .tag{color:var(--green)}
+.ba .side p{font-size:14.5px;line-height:1.8;margin:0}
+.ba .bad p{color:#7f1d1d}
+.ba .good p{color:#14532d}
+
+/* ---------- demo ---------- */
+.demo{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:24px 26px;margin-bottom:20px}
+.demo h4{margin-top:0}
+.demo .hint{color:var(--faint);font-size:12.5px;font-family:var(--mono);margin-top:10px}
+.slider{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0 18px}
+.slider input[type=range]{flex:1;min-width:200px;accent-color:var(--accent)}
+.slider .val{font-family:var(--mono);font-size:13px;color:var(--accent-dark);min-width:190px}
+.morphbox{background:#fbf8f1;border:1px solid var(--line);border-radius:12px;padding:18px 20px;font-size:15px;line-height:1.85;min-height:120px}
+.morphbox b{color:var(--accent-dark)}
+
+/* ---------- checklist ---------- */
+.check{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 20px}
+.check label{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed var(--line2);cursor:pointer;font-size:15px;color:var(--ink2)}
+.check label:last-child{border-bottom:none}
+.check input{margin-top:6px;width:17px;height:17px;accent-color:var(--accent);flex:none;cursor:pointer}
+.check input:checked + span{color:var(--faint);text-decoration:line-through}
+.check .k{font-family:var(--mono);font-size:12.5px;color:var(--accent);display:block}
+
+/* ---------- callout ---------- */
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 12px 12px 0;padding:18px 22px;margin:22px 0;max-width:900px}
+.callout.blue{border-color:var(--blue);background:var(--blue-soft)}
+.callout.amber{border-color:var(--amber);background:var(--amber-soft)}
+.callout.green{border-color:var(--green);background:var(--green-soft)}
+.callout p{margin:0;color:var(--ink2);font-size:15.2px}
+.callout p b{color:var(--ink)}
+
+/* ---------- table ---------- */
+table{width:100%;border-collapse:collapse;margin:18px 0 22px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14.5px}
+th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f3efe6;font-weight:700;font-size:13px;letter-spacing:.4px;color:var(--ink2)}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);font-size:13px;color:var(--accent-dark);white-space:nowrap}
+
+/* ---------- footer ---------- */
+footer.foot{max-width:1160px;margin:60px auto 0;padding:26px 24px 60px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer.foot a{color:var(--muted)}
+footer.foot a:hover{color:var(--accent)}
+.srcnote{font-size:13px;color:var(--faint);max-width:900px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Karpathy <em>长推解析</em></div>
+    <div class="nav-links">
+      <a href="#orig">原文</a>
+      <a href="#core">核心论点</a>
+      <a href="#ladder">输出阶梯</a>
+      <a href="#ste">ASD-STE100</a>
+      <a href="#html">HTML 输出</a>
+      <a href="#video">3b1b 视频</a>
+      <a href="#deep">深度分析</a>
+      <a href="#crit">边界与批判</a>
+      <a href="#todo">落地清单</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-kicker"><span class="dot"></span>X / @KARPATHY · 2026-10-02 · 4.4M 曝光</span>
+    <h1 class="hero-title">别再让 AI <em>用文字</em> 回答你
+      <span class="sub">Karpathy 最新长推：输出的格式，正在决定你理解的速度</span>
+    </h1>
+    <p class="hero-desc">
+      Andrej Karpathy 在 2026 年 10 月 2 日发了一条长推，给出了一条被他反复验证的输出格式升级阶梯：
+      <b>受控语言文字 → 图表 → 网页 → 定制讲解视频</b>。核心判断是：模型越来越强之后，人的工作会整体
+      <b>上移到「监督与理解」这一层</b>，而理解效率的关键不再是「怎么问」，而是「让它用什么形式答」。
+    </p>
+    <div class="hero-chips">
+      <div class="chip"><b>4</b><span class="unit">级输出格式阶梯</span></div>
+      <div class="chip"><b>4.4M</b><span class="unit">曝光</span></div>
+      <div class="chip"><b>1.1K</b><span class="unit">点赞</span></div>
+      <div class="chip"><b>0</b><span class="unit">需要外部依赖（本文档）</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 1. 原文 ============ -->
+<section id="orig" class="reveal">
+  <div class="sec-head"><span class="sec-no">01</span><h2>原文全文</h2></div>
+  <p class="sec-lede">
+    先看原话。以下为该条推文的完整英文原文（可折叠长文），随后给出逐段中译。所有分析都基于这段一手材料。
+  </p>
+
+  <div class="tweet">
+    <div class="tweet-head">
+      <div class="avatar">AK</div>
+      <div class="who">
+        <div class="name">Andrej Karpathy
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.966 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </div>
+        <div class="handle">@karpathy</div>
+      </div>
+      <div style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--faint);text-align:right">2026-10-02<br>00:37 UTC</div>
+    </div>
+    <div class="tweet-body" id="tweetBody">We'll be spending a lot more time trying to understand the outputs of language models. A few thoughts, tips & tricks:
+
+Writing. Something I've had success with: Ask your LLM to explain something in ASD-STE100, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs [are] well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for "80% of the way to ASD-STE100" because the spec is quite stringent. But even better:
+
+Diagrams / images. Instead of writing, ask your LLM to create a diagram. These can be a lot easier to process, parse, and understand. But even better:
+
+Web pages. Ask for output "in HTML" to get a beautiful, interactive webpage. LLMs are getting really good at frontend and can create beautiful experiences, animations, etc. But even better:
+
+Explainer videos. The output format I am most bullish on is fully custom / bespoke explainer videos generated on any arbitrary topic. Experiment with things like "Create a 3b1b style video explainer on X. Use my ElevenLabs API key for audio narration". (you'd need an API key for the latter or you can ask your LLM to find you decent free alternatives that use your local compute). This is actually starting to work!
+
+In summary:
+- As LLMs get better, they will do more and more of the legwork autonomously, and a lot more of our work will rise up the abstractions into oversight and understanding.
+- Luckily, LLMs can help here too because as intelligence and code are increasingly abundant, you can ask for large, custom, discardable software artifacts (e.g. web apps, video explainers) that would have never made sense to create before. Push the boundaries here and you'll be surprised.</div>
+    <button class="fold" id="foldBtn" type="button">展开 / 收起英文原文 ▾</button>
+    <div class="tweet-foot">
+      <span>曝光 <b>4.4M</b></span>
+      <span>点赞 <b>1.1K</b></span>
+      <span>形式 <b>单条长推</b></span>
+      <a href="https://x.com/karpathy/status/2105819303471976479" target="_blank" rel="noopener">在 X 上查看原文 →</a>
+    </div>
+  </div>
+
+  <h3>逐段中译</h3>
+  <div class="card">
+    <p style="font-size:15.2px;line-height:2">
+      <b>总起：</b>「我们会把越来越多的时间，花在<b>试图理解语言模型的输出</b>上。以下是一些想法、技巧和经验。」<br><br>
+      <b>① 文字。</b>一个我用过且有效的做法：<b>让模型用 ASD-STE100 解释一件事</b>——那是一套最初为航空航天维修文档开发的受控语言规范。模型对这门语言很熟悉，而它对干净文风的强约束，常常让输出<b>可读性好得多</b>。有时我会稍微放松一点，比如要求「<b>80% 的 ASD-STE100</b>」，因为这套规范相当严格。但<b>更好的方式是</b>：<br><br>
+      <b>② 图解 / 图片。</b>不要写，改成<b>让模型画一张图</b>。图更容易被处理、解析和理解。但<b>更好的方式是</b>：<br><br>
+      <b>③ 网页。</b>要求「<b>以 HTML 输出</b>」，你会得到一个漂亮、可交互的网页。模型的前端能力越来越强，能做出很美的体验和动画。但<b>更好的方式是</b>：<br><br>
+      <b>④ 讲解视频。</b>「我<b>最看好</b>的输出格式，是针对任意主题生成的<b>完全定制化的讲解视频</b>。可以试试这样的指令：『为 X 制作一支 3b1b 风格的讲解视频。用我的 ElevenLabs API key 做语音旁白。」（后者需要 API key；也可以让模型帮你找基于本地算力的免费替代方案。）<b>这已经真的开始能用了！</b><br><br>
+      <b>总结：</b><br>
+      · 随着模型变强，它们会自主完成越来越多的粗活，我们的工作会<b>整体上移到「监督与理解」的抽象层</b>。<br>
+      · 好在 LLM 在这一层也能帮忙：因为智能和代码正变得日益丰裕，你可以要求生成<b>大型的、定制化的、用完即弃的软件产物</b>（网页应用、讲解视频）——这些在以前根本不值得去做。<b>在这条线上把边界往外推，你会得到惊喜。</b>
+    </p>
+  </div>
+  <p class="srcnote">来源：<a href="https://x.com/karpathy/status/2105819303471976479" target="_blank" rel="noopener">x.com/karpathy/status/2105819303471976479</a>（2026-10-02 抓取）。中译为笔者所加，非官方译文。</p>
+</section>
+
+<!-- ============ 2. 核心论点 ============ -->
+<section id="core" class="reveal">
+  <div class="sec-head"><span class="sec-no">02</span><h2>核心论点：这是一条关于「抽象层迁移」的判断</h2></div>
+  <p class="sec-lede">
+    这条长推表面上在讲「怎么让 AI 讲得更好懂」，但它真正的骨架是一个关于<b>工作性质变化</b>的论断。输出格式阶梯只是这个论断的<b>操作化落地</b>。
+  </p>
+
+  <div class="callout">
+    <p><b>一句话概括：</b>当「生成」变得廉价之后，瓶颈就从<b>生产</b>转移到了<b>理解</b>。而理解一个东西的最短路径，不是读更多字，而是<b>让模型换一个更接近人类认知的形式来输出</b>。</p>
+  </div>
+
+  <h3>三层结构</h3>
+  <div class="grid g3">
+    <div class="card">
+      <span class="num">第 1 层 · 现象</span>
+      <h4>格式比措辞更影响理解</h4>
+      <p>同样的知识量，模型用一段话讲、用一张图讲、用一个网页讲、用一支视频讲，你吸收它的速度差出一个量级。Karpathy 反复实测后，把这条经验固化成了阶梯。</p>
+    </div>
+    <div class="card">
+      <span class="num">第 2 层 · 机制</span>
+      <h4>抽象层整体上移</h4>
+      <p>「As LLMs get better, they will do more and more of the legwork autonomously」——粗活（legwork）交给模型，人的工作上移到 oversight（监督）与 understanding（理解）。这是他对「AI 会不会取代程序员」这个问题的替代性回答：取代的不是人，是<b>那一层具体动作</b>。</p>
+    </div>
+    <div class="card">
+      <span class="num">第 3 层 · 机会</span>
+      <h4>「用完即弃」的定制产物</h4>
+      <p>因为智能和代码变便宜了，过去因为「不划算」而被放弃的需求（一个专属于自己的讲解视频、一张只为自己定制的图）现在<b>边际成本接近零</b>。他把这类产物称为 <b>discardable software artifacts</b>。</p>
+    </div>
+  </div>
+
+  <h3>为什么「discardable（用完即弃）」这个词是关键</h3>
+  <p class="body">
+    过去 AI 生成代码的最大心理障碍是「我得为它负责」：要审、要维护、要长期共存于代码库里。这让很多人宁可自己写。<b>「用完即弃」重新定义了成本结构</b>——
+  </p>
+  <table>
+    <tr><th>维度</th><th>传统做法</th><th>用完即弃的产物</th></tr>
+    <tr><td class="mono">维护成本</td><td>需要长期维护，纳入代码评审流程</td><td>用完就删，不进主干，不需要长期 owner</td></tr>
+    <tr><td class="mono">质量门槛</td><td>必须一次写对，否则污染系统</td><td>允许 60 分，因为重做成本极低</td></tr>
+    <tr><td class="mono">触发条件</td><td>「我需要这个功能」</td><td>「我有点想理解一下这件事」——<b>好奇本身就够了</b></td></tr>
+    <tr><td class="mono">产出形态</td><td>一份规范文档</td><td>一个可交互网页 / 一支 3 分钟动画</td></tr>
+  </table>
+  <p class="body">
+    这条长推真正的杠杆在这里：<b>它把「学习/理解」这件事的成本，压缩到了接近零</b>。你想搞懂 TCP 拥塞控制？以前要么读三章论文，要么花钱找教程；现在一句话生成一支为你量身定制的动画。
+  </p>
+</section>
+
+<!-- ============ 3. 输出阶梯 ============ -->
+<section id="ladder" class="reveal">
+  <div class="sec-head"><span class="sec-no">03</span><h2>四级输出格式阶梯（可交互）</h2></div>
+  <p class="sec-lede">
+    这是原推最核心、也最可直接复用的部分。每一级都比上一级<b>更贵、更难自检、但理解密度更高</b>。点击任意一级，看它的提示词写法、理由和示例。
+  </p>
+
+  <div class="ladder" id="ladder">
+    <div class="rung on" data-lv="1"><span class="lv">L1</span><span class="tt">受控语言文字</span><span class="ds">同一段话，可读性大幅提升</span></div>
+    <div class="rung" data-lv="2"><span class="lv">L2</span><span class="tt">图解 / 图片</span><span class="ds">「不写，画出来」——更容易被解析</span></div>
+    <div class="rung" data-lv="3"><span class="lv">L3</span><span class="tt">网页（HTML）</span><span class="ds">可交互、可动画、可分享的单文件产物</span></div>
+    <div class="rung" data-lv="4"><span class="lv">L4</span><span class="tt">定制讲解视频</span><span class="ds">Karpathy 最看好的终局形态</span></div>
+  </div>
+
+  <div class="rung-panel on" data-lv="1">
+    <h4 style="margin-top:0">L1 · 受控语言（Controlled Language）</h4>
+    <p class="why"><b>为什么这一步有效：</b>模型的默认输出是「通用互联网英语」——大量被动句、从句嵌套、修辞性连接词。对 experts 是可读的，对快速吸收是<b>低效</b>的。套一层硬约束，等于强行把模型从「写得好」切换到「说得准」。</p>
+    <div class="prompt-label">提示词模板</div>
+    <pre><code><span class="c"># 严格版</span>
+用 ASD-STE100 解释 &lt;主题&gt;。
+
+<span class="c"># 实战更常用（Karpathy 推荐）</span>
+用「80% 的 ASD-STE100」解释 &lt;主题&gt;。</code></pre>
+    <div class="ba">
+      <div class="side bad">
+        <span class="tag">✕ 默认输出风格</span>
+        <p>「在当今的数据传输场景中，拥塞控制机制扮演着至关重要的角色，它的设计往往涉及到对网络状况的一个综合考量，而不仅仅是单一的带宽指标……」</p>
+      </div>
+      <div class="side good">
+        <span class="tag">✓ 受控语言风格</span>
+        <p>「拥塞控制决定发送速率。发送端不能只看着带宽。带宽和时延会共同改变网络容量。丢包是拥塞的信号。算法据此减小发送速率。」</p>
+      </div>
+    </div>
+    <p class="srcnote" style="margin-top:0">右侧为示意改写，用于呈现 ASD-STE100 的典型特征（一句一义、主动语态、避免名词化、只用受控词表），非模型实测输出。</p>
+  </div>
+
+  <div class="rung-panel" data-lv="2">
+    <h4 style="margin-top:0">L2 · 图解</h4>
+    <p class="why"><b>为什么这一步有效：</b>人眼对空间结构的处理是并行的，对线性文本是串行的。一张流程图能同时呈现分支、循环、时序，而文字必须逐句重建这些结构。Karpathy 的措辞是图「更容易被处理、解析和理解」（process, parse, understand）——注意他把这三个动词都给了「读图」。</p>
+    <div class="prompt-label">提示词模板</div>
+    <pre><code>不要写文字。画一张图解释 &lt;主题&gt;。
+
+<span class="c"># 更强的版本（自包含，可直接打开）</span>
+画一张 Mermaid 图解释 &lt;主题&gt;。
+要求：节点不超过 12 个，标注主干路径，
+用不同形状区分「数据 / 控制 / 状态」。</code></pre>
+    <div class="callout blue">
+      <p><b>实操建议：</b>让模型输出 <b>Mermaid</b> 或 <b>SVG</b> 而不是位图——前者是文本，可以被你二次编辑、可以 diff、可以塞进任何 Markdown 渲染器。位图只能看，不能改。</p>
+    </div>
+  </div>
+
+  <div class="rung-panel" data-lv="3">
+    <h4 style="margin-top:0">L3 · 网页（HTML 输出）</h4>
+    <p class="why"><b>为什么这一步有效：</b>这是整条阶梯里<b>性价比的拐点</b>。你不需要任何工具链，只要一个 <code>.html</code> 文件，双击就能看；它同时承载了文字、图形、动效和交互——相当于把 L1~L2 的收益打包，同时获得了 L1 的可搜索性和 L4 的表现力。</p>
+    <div class="prompt-label">提示词模板</div>
+    <pre><code>用 HTML 输出一篇讲解 &lt;主题&gt; 的网页。
+
+要求：
+- 单文件，CSS/JS 全部内联，零外部依赖
+- 暖色调、衬线标题，风格参考一个你认可的页面
+- 包含 3 个可折叠的细节区
+- 关键流程用内联 SVG 画出来
+- 结尾留 3 个「你现在应该能回答」的自测问题</code></pre>
+    <div class="callout">
+      <p><b>你正在看的这一页，本身就是 L3 的产物。</b>它满足上面几乎每一条约束：单文件、内联样式与脚本、无外部字体和图片、可离线双击打开。<b>这就是他说的「a beautiful, interactive webpage」的实际形态。</b></p>
+    </div>
+  </div>
+
+  <div class="rung-panel" data-lv="4">
+    <h4 style="margin-top:0">L4 · 定制讲解视频（Karpathy 最看好）</h4>
+    <p class="why"><b>为什么这一步是终局：</b>前三级本质上都还是「<b>你自己</b>在读」。视频是唯一一个「<b>你什么都不用做</b>，信息自己流进来」的形式——注意力成本最低。而且它可以完全按你的认知习惯定制：语速、深度、类比、举例偏好。</p>
+    <div class="prompt-label">提示词模板（原推原话的中文化）</div>
+    <pre><code>为 &lt;主题&gt; 制作一支 3b1b 风格的讲解视频。
+用我的 ElevenLabs API key 做语音旁白。
+
+<span class="c"># 没有 API key 时的变体</span>
+为 &lt;主题&gt; 制作一支 3b1b 风格的讲解视频，
+用我本地算力能跑的免费 TTS 方案做旁白
+（先帮我比较几个方案再选定一个）。</code></pre>
+    <h4>如何理解「3b1b 风格」</h4>
+    <p class="body" style="font-size:15px">
+      3b1b 即 <b>3Blue1Brown</b>（Grant Sanderson），以「手写感的数学动画 + 逐步揭示 + 旁白与动画严格同步」著称。让模型模仿这个风格，实际上是在指定一套<b>具体的视听规范</b>：极简配色、大字号公式、镜头缓慢推近、每一步只引入一个新概念、旁白不重复屏幕上已有的字。
+    </p>
+    <div class="callout amber">
+      <p><b>注意成本结构：</b>L4 已经不是「一次问答」的量级了。Karpathy 提到类似量级的任务——在 2026 年 8 月 2 日的另一条推文里，他让 Opus 5 用 100 万 token 预算（≈10 美元）跑约 2 小时，写了 5500 行代码来程序化渲染《指环王》开篇段落。<b>推特那句「This is actually starting to work!」的分量，就来自这个量级的实证。</b></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. ASD-STE100 ============ -->
+<section id="ste" class="reveal">
+  <div class="sec-head"><span class="sec-no">04</span><h2>重点拆解：ASD-STE100 到底是什么</h2></div>
+  <p class="sec-lede">
+    这是整条推文里最「反直觉」的一招——用一套<b>航空航天工业标准</b>来改善 LLM 的输出质量。为什么它有效，值得单独讲。
+  </p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4>是什么</h4>
+      <p><b>Simplified Technical English（STE）</b>，一套受控自然语言。1980 年代由欧洲航空工业协会（AECMA）应欧洲航空业需求开发，起因很务实：同一个飞机部件的维修手册要发给世界各地的技师，很多人的母语不是英语，翻译损耗导致误操作。</p>
+      <p style="margin-top:10px">现行版本（2025 年 1 月发布）包含 <b>53 条写作规则</b>和约 <b>900 个受控词</b>的词表。</p>
+    </div>
+    <div class="card">
+      <h4>约束了什么</h4>
+      <p>· 一句话只表达一个动作<br>· 强制<b>主动语态</b>、禁止名词化（用 "install" 而非 "installation"）<br>· 只能使用词表内的受控动词<br>· 禁用缩略语、禁用大部分非受控连接词<br>· 固定冠词、时态、数的使用规则</p>
+    </div>
+  </div>
+
+  <h3>为什么这套标准会「意外地」适合 LLM</h3>
+  <p class="body">
+    Karpathy 说的是「LLMs are well-versed in this language」——模型对这套规范的熟悉度非常高，因为它的语料里存在大量严格遵循该标准的航空/军工技术文档。约束越硬，模型的输出空间越小，<b>「跑偏」的概率就越低</b>。
+  </p>
+  <p class="body">
+    从工程角度看，这是把提示工程问题转化成了<b>格式选择问题</b>。你不需要写长 prompt 描述你想要的文风，只要指定一个已有的、有共识的规范。这是很典型的 Karpathy 式思路：<b>不要发明新框架，去挂到一个已被验证的标准上。</b>
+  </p>
+
+  <h3>「80% 的 ASD-STE100」——这个细节是整条推文里最实用的部分</h3>
+  <p class="body">
+    完整规范「quite stringent」（相当严格），对非技术话题会显得过于生硬。Karpathy 的解法是给出一个<b>可调的中间档</b>。这是一个很小但很关键的设计：把「格式」变成一个<b>连续量</b>而不是开关。
+  </p>
+
+  <h3>可交互：格式强度滑块</h3>
+  <div class="demo">
+    <p style="color:var(--muted);font-size:14.5px;margin-bottom:4px">拖动滑块，看同一个请求在「默认文风 → 60% → 80% → 100% STE」下的表述差异。这是对 Karpathy 那个「80%」技巧的直观演示。</p>
+    <div class="slider">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">0%</span>
+      <input type="range" id="steSlider" min="0" max="100" step="20" value="80">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">100%</span>
+      <span class="val" id="steVal">80%</span>
+    </div>
+    <div class="morphbox" id="morphBox"></div>
+    <p class="hint">↑ 示意文本，用于呈现 STE 特征变化，非模型实测输出。</p>
+  </div>
+</section>
+
+<!-- ============ 5. HTML 输出 ============ -->
+<section id="html" class="reveal">
+  <div class="sec-head"><span class="sec-no">05</span><h2>L3 为什么是拐点：HTML vs Markdown</h2></div>
+  <p class="sec-lede">
+    Karpathy 说「Ask for output in HTML」，这句话在 2026 年上半年恰好撞上了一场行业辩论：<b>AI 的默认输出格式该不该继续是 Markdown？</b>
+  </p>
+
+  <p class="body">
+    辩论的背景是：Anthropic 内部有人主张 <b>Claude 应该停止用 Markdown 回答用户</b>，改用 HTML。理由包括<b>信息密度</b>（Markdown 是一行一句话的线性流，HTML 可以并排、可以折叠、可以用视觉层级）、<b>可分享性</b>（一个文件就是一个完整的东西）、以及<b>交互性</b>。这与 Karpathy 这条推文的立场高度一致——他在 X 上给的是同一方向的经验证据。
+  </p>
+
+  <table>
+    <tr><th>维度</th><th>Markdown 输出</th><th>HTML 单文件输出</th></tr>
+    <tr><td class="mono">信息密度</td><td>线性，一句一行</td><td>可多栏、可折叠、可分层</td></tr>
+    <tr><td class="mono">可交互</td><td>基本无</td><td>可做动画、模拟器、图表</td></tr>
+    <tr><td class="mono">可编辑</td><td>极强（纯文本，可 diff）</td><td>强（语义标签清晰）</td></tr>
+    <tr><td class="mono">二次加工</td><td>贴进任何笔记系统</td><td>需要浏览器才能看</td></tr>
+    <tr><td class="mono">复用价值</td><td>高（文本是通用原料）</td><td>高（可视化产物本身即交付物）</td></tr>
+  </table>
+
+  <div class="callout blue">
+    <p><b>不要二选一。</b>更实用的做法是<b>按用途分流</b>：需要被引用、被 diff、被喂给下一个模型的对话 → 要 Markdown；需要被理解、被演示、被自己反复回看的知识 → 要 HTML。Karpathy 说的「更可读」是针对<b>人作为读者</b>这一角色而言的。</p>
+  </div>
+
+  <h3>可直接复用的 HTML 提示词骨架</h3>
+  <pre><code>用 HTML 输出一篇讲解 &lt;主题&gt; 的网页，要求：
+
+<span class="k">1. 单文件</span>   —— CSS/JS 全部内联，零外部依赖，双击可开
+<span class="k">2. 有视觉层级</span> —— 衬线标题、暖色系、留白充足
+<span class="k">3. 有可交互</span>   —— 至少 3 个可折叠区 / 一张内联 SVG 图 / 一个交互演示
+<span class="k">4. 有检索性</span>   —— 结构用语义标签，目录可跳转
+<span class="k">5. 有验证点</span>   —— 结尾 3 个自测问题，附折叠答案
+<span class="k">6. 有出处</span>     —— 标注原始来源链接与抓取时间</code></pre>
+  <div class="callout green">
+    <p><b>第 6 条来自本仓库的实践。</b>一个 AI 生成的网页最大的隐患是「看起来很权威但内容是编的」。要求它<b>标注来源与时间戳</b>，成本几乎为零，却能立刻区分「真调研」和「幻觉」。</p>
+  </div>
+</section>
+
+<!-- ============ 6. 3b1b 视频 ============ -->
+<section id="video" class="reveal">
+  <div class="sec-head"><span class="sec-no">06</span><h2>L4 的实战配方：怎么把「3b1b 视频」真的跑通</h2></div>
+  <p class="sec-lede">
+    原推只给了一句话指令，实际上执行链条更长。下面是一个可复用的完整配方，按环节拆开。
+  </p>
+
+  <h3>执行链条</h3>
+  <div class="grid g4">
+    <div class="card"><span class="num">STEP 1</span><h4>脚本</h4><p>先要一份逐镜头脚本：每个镜头画面是什么、旁白说什么、停留几秒。确认后再动手。</p></div>
+    <div class="card"><span class="num">STEP 2</span><h4>配音</h4><p>用 ElevenLabs 生成旁白音频；无 key 时改用本地 TTS（如 Kokoro / Piper / macOS `say`）。</p></div>
+    <div class="card"><span class="num">STEP 3</span><h4>画面</h4><p>让模型写程序化动画（Manim / Remotion / ECharts 序列帧），而非生成静态图再硬凑。</p></div>
+    <div class="card"><span class="num">STEP 4</span><h4>合成</h4><p>用 ffmpeg 把音频与画面按时间轴对齐，输出 mp4。旁白长度反过来决定动画节奏。</p></div>
+  </div>
+
+  <h3>完整提示词（工程化版本）</h3>
+  <pre><code>为 &lt;主题&gt; 制作一支 3b1b 风格的讲解视频，交付一份可运行的项目。
+
+<span class="c"># 风格规范</span>
+- 极简配色，深色背景，单一强调色
+- 公式分步揭示，每一步只引入一个新概念
+- 旁白不重复屏幕上已有的文字
+- 目标时长 2–3 分钟
+
+<span class="c"># 交付物</span>
+1. shots.json   —— 逐镜头描述（画面 / 旁白 / 时长）
+2. narration.txt —— 完整旁白稿
+3. build.py 或 build.ts —— 程序化生成动画的脚本
+4. Makefile     —— 一条命令出片
+5. README.md    —— 如何换主题 / 换配色 / 换语言
+
+<span class="c"># 约束</span>
+- 先输出 shots.json 让我确认，再继续
+- 旁白用我的 ElevenLabs API key；没有就换本地 TTS 并说明</code></pre>
+
+  <div class="callout amber">
+    <p><b>为什么必须先确认脚本：</b>视频是所有格式里<b>返工成本最高</b>的（配音和动画都得重做）。这就是 Karpathy 说的 L4「even better」的另一面——你得到的理解密度更高，但你的<b>审核机制必须相应升级</b>，从「读一遍」变成「读脚本 + 看片」。</p>
+  </div>
+</section>
+
+<!-- ============ 7. 深度分析 ============ -->
+<section id="deep" class="reveal">
+  <div class="sec-head"><span class="sec-no">07</span><h2>深度分析：这条推文在论证什么，它没说什么</h2></div>
+  <p class="sec-lede">把上面所有操作化细节抽掉，看这条推文隐含的判断结构。</p>
+
+  <h3>论点 A：稀缺性发生了转移</h3>
+  <p class="body">
+    过去稀缺的是<b>「实现」</b>——把一个想法变成可运行的东西需要时间和技能，所以不是每个想法都值得实现。Karpathy 说「as intelligence and code are increasingly abundant」，意思是实现正在变成近乎免费的东西。
+  </p>
+  <p class="body">
+    一旦实现变便宜，稀缺的就转移到了<b>「知道该实现什么」</b>和<b>「判断实现得对不对」</b>。这就是「工作上移到 oversight and understanding」的全部含义。输出格式阶梯，就是为这层新工作配备的工具。
+  </p>
+
+  <h3>论点 B：这是一个关于「注意力」的经济学判断</h3>
+  <p class="body">
+    阶梯的排序逻辑值得单独拆开看。Karpathy 不是随便列了个清单，四级之间是严格递进的：
+  </p>
+  <table>
+    <tr><th>级别</th><th>输出物</th><th>它替你省掉了什么</th><th>它的成本</th></tr>
+    <tr><td class="mono">L1</td><td>受控语言文字</td><td>省掉「读懂」的额外算力</td><td>几乎为零</td></tr>
+    <tr><td class="mono">L2</td><td>图解</td><td>省掉「在脑中重建结构」的串行工作</td><td>需渲染/看图</td></tr>
+    <tr><td class="mono">L3</td><td>网页</td><td>省掉「自己做演示」的时间</td><td>需浏览器</td></tr>
+    <tr><td class="mono">L4</td><td>视频</td><td>省掉「你自己读」这件事本身</td><td>算力 + 时间 + 审核成本</td></tr>
+  </table>
+  <p class="body">
+    递进的方向是<b>「作者的呈现负担」越来越重，「读者的参与负担」越来越轻</b>。到了 L4，读者的参与负担降到最低——你只需要看。这就是他说的「This is actually starting to work!」的真实含义。
+  </p>
+
+  <h3>论点 C：他没说的三件事</h3>
+  <div class="grid g3">
+    <div class="card">
+      <h4>① 审核成本没有消失</h4>
+      <p>原推只谈「理解效率」，没谈「验证成本」。L4 尤其危险：你很难在两分钟的视频里发现第 47 秒的一个事实错误。Karpathy 自己在另一条推文里承认过这个软肋——模型<b>无法高效地自我审计</b>，因为它不能像人一样「玩」自己的作品。</p>
+    </div>
+    <div class="card">
+      <h4>② 他是「最不能用 AI 的人」在说话</h4>
+      <p>一位在多家前沿实验室工作过的研究者，他的日常信息流天然就是被 LLM 高度优化过的。他说的「更可读」是相对于<b>专家读者</b>而言。零基础读者从这套方法里能拿到的收益，比例上应该更高，但盲区也更大——他没覆盖非技术、非英语、无图形直觉的人群。</p>
+    </div>
+    <div class="card">
+      <h4>③ 阶梯顶端没有闭环</h4>
+      <p>阶梯止于「生成」。但如果没有 L1 那种<b>可搜索、可引用、可 diff 的纯文本</b>兜底，生成出来的一堆视频和网页会变成新的信息孤岛。他给的是产出侧的效率方案，没给<b>沉淀与检索</b>的方案。</p>
+    </div>
+  </div>
+
+  <h3>放到他自己的历史脉络里看</h3>
+  <p class="body">
+    这条推文和 Karpathy 过去两年的几个动作是同一条线的：
+  </p>
+  <ul class="blist">
+    <li><b>2025 年初：「vibe coding」</b>——命名了「全靠感觉、拥抱指数、忘掉代码长什么样」这种编程方式。</li>
+    <li><b>2025 年底：「I've never felt this much behind as a programmer」</b>——指出职业被「剧烈重构」，而重构发生在「比特」这一层。</li>
+    <li><b>2026 年：转向「监督与理解」</b>——这条最新推文是这条线索的自然终点。当产出被自动化，价值就转移到产出物的可理解性上，而「可理解性」是可以被提示词工程直接优化的。</li>
+  </ul>
+  <p class="body">
+    <b>换句话说，这条长推不是一堆小技巧，它是「后执行时代」的一份工作说明书。</b>
+  </p>
+</section>
+
+<!-- ============ 8. 批判 ============ -->
+<section id="crit" class="reveal">
+  <div class="sec-head"><span class="sec-no">08</span><h2>边界与批判：什么时候这套方法会失效</h2></div>
+  <p class="sec-lede">一套好用的方法必须有明确的失效边界，否则就成了咒语。以下是几个可以实际检验的失效场景。</p>
+
+  <table>
+    <tr><th>失效场景</th><th>为什么失效</th><th>退路</th></tr>
+    <tr>
+      <td><b>需要精确引用</b></td>
+      <td>视频和网页里的内容难以精确定位和引用；一旦要核对某个数字，必须回到原始来源</td>
+      <td>要求同时产出 Markdown 版本作为「事实底稿」</td>
+    </tr>
+    <tr>
+      <td><b>幻觉高发领域</b></td>
+      <td>越漂亮的产物越容易被当成「已经验证过」。视觉权威性会掩盖事实不确定性</td>
+      <td>强制要求标注来源链接与抓取时间；无来源的部分显式标为「未核实」</td>
+    </tr>
+    <tr>
+      <td><b>需要 diff 和版本管理</b></td>
+      <td>HTML 产物的 diff 体验远差于纯文本；5500 行的程序化动画更难 review</td>
+      <td>大产物要求同时保留可读的源文件（Manim/ECharts 源码优于渲染产物）</td>
+    </tr>
+    <tr>
+      <td><b>低带宽 / 无浏览器环境</b></td>
+      <td>L3、L4 都要求渲染能力；纯文本在任何设备上都能读</td>
+      <td>保持 L1 为默认，L3/L4 作为「需要时再生成」的升级</td>
+    </tr>
+    <tr>
+      <td><b>成本敏感的批量任务</b></td>
+      <td>L4 量级的任务动辄数美元、数小时（参见他 8 月那条 100 万 token 的推文）</td>
+      <td>按「这个知识点值不值 2 小时」来决定是否升到 L4</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <p><b>一个更诚实的表述：</b>输出格式阶梯优化的不是「你懂了多少」，而是「<b>你从一份 AI 产物里榨出多少理解</b>」。它提高了理解密度，但没有提高事实密度——后者取决于模型本身和你的核查动作。这两件事经常被混为一谈。</p>
+  </div>
+</section>
+
+<!-- ============ 9. 落地清单 ============ -->
+<section id="todo" class="reveal">
+  <div class="sec-head"><span class="sec-no">09</span><h2>落地清单</h2></div>
+  <p class="sec-lede">把这条推文压成可以直接照做的动作。勾选状态保存在本地浏览器里，刷新不会丢。</p>
+
+  <div class="check">
+    <label><input type="checkbox"><span><span class="k">L1 · 立刻做，零成本</span>把「用 80% 的 ASD-STE100 解释 X」存成一个快捷指令。下次遇到难懂的解释，先试它。</span></label>
+    <label><input type="checkbox"><span><span class="k">L1 · 立刻做</span>当答案读不懂时，先要求「重写一版，主动语态、一句一义、去掉所有从句」，再看原文对照。</span></label>
+    <label><input type="checkbox"><span><span class="k">L2 · 本周</span>凡是涉及流程/架构/时序的问题，一律先要 Mermaid 图，再要文字说明。</span></label>
+    <label><input type="checkbox"><span><span class="k">L3 · 本周</span>把「输出单文件 HTML 页面」加进你的常用提示词模板，并固定那 6 条骨架要求。</span></label>
+    <label><input type="checkbox"><span><span class="k">L3 · 持续</span>要求所有 AI 生成的网页标注<b>来源链接 + 抓取时间</b>，把「漂亮的幻觉」和「真调研」分开。</span></label>
+    <label><input type="checkbox"><span><span class="k">L3 · 持续</span>给 L1 兜底：重要内容同时留一份 Markdown 底稿，保证可搜索、可引用、可 diff。</span></label>
+    <label><input type="checkbox"><span><span class="k">L4 · 选做</span>挑一个你反复没搞懂的主题，走完整链条：脚本 → 配音 → 程序化动画 → ffmpeg 合成。</span></label>
+    <label><input type="checkbox"><span><span class="k">L4 · 纪律</span>升到 L4 之前先问自己：这个知识点值不值 2 小时和几美元？值，才升。</span></label>
+  </div>
+
+  <div class="callout green" style="margin-top:28px">
+    <p><b>最后一条，也是最重要的一条：</b>这条推文的所有技巧都指向同一个方向——<b>把「理解」当作可以被工程化的对象</b>。而一旦理解可以被工程化，学习本身就不再是瓶颈。这是这条推文真正值得记住的东西，比那四级格式重要得多。</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span>MyThings / Karpathy · 单文件自包含页面 · 暖色纸感风格</span>
+  <span>原文：<a href="https://x.com/karpathy/status/2105819303471976479" target="_blank" rel="noopener">x.com/karpathy/status/2105819303471976479</a> · <a href="https://www.asd-ste100.org/" target="_blank" rel="noopener">ASD-STE100</a></span>
+</footer>
+
+<script>
+/* ---------- 滚动进度 ---------- */
+const bar = document.getElementById('progress');
+function onScroll(){
+  const h = document.documentElement;
+  const p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+  bar.style.width = (p * 100) + '%';
+}
+addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+/* ---------- 进入动画 ---------- */
+const io = new IntersectionObserver((es) => {
+  es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, {threshold:.08});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ---------- 原文折叠 ---------- */
+const body = document.getElementById('tweetBody');
+const fold = document.getElementById('foldBtn');
+let collapsed = false;
+const FULL = body.textContent;
+const SHORT = FULL.split('\n\n').slice(0,2).join('\n\n');
+body.textContent = SHORT;
+fold.onclick = () => {
+  collapsed = !collapsed;
+  body.textContent = collapsed ? SHORT : FULL;
+  fold.textContent = collapsed ? '展开全文英文原文 ▾' : '收起 ▴';
+};
+fold.textContent = '展开全文英文原文 ▾';
+
+/* ---------- 阶梯切换 ---------- */
+const rungs = document.querySelectorAll('.rung');
+const panels = document.querySelectorAll('.rung-panel');
+rungs.forEach(r => r.onclick = () => {
+  rungs.forEach(x => x.classList.remove('on'));
+  panels.forEach(p => p.classList.remove('on'));
+  r.classList.add('on');
+  document.querySelector('.rung-panel[data-lv="' + r.dataset.lv + '"]').classList.add('on');
+});
+
+/* ---------- STE 强度滑块 ---------- */
+const LEVELS = {
+  0: {
+    label: '0% · 默认文风',
+    text: '在当今高度互联的环境中，浏览器与服务器的通信机制扮演着至关重要的角色。这一机制的底层设计，往往涉及到对吞吐、延迟、连接复用以及失败重试等多个维度的<b>综合权衡</b>，而不仅仅是单一指标的优化。理解这一点，对于构建可靠的网络应用而言具有重要意义。'
+  },
+  20: {
+    label: '20% · 轻度约束',
+    text: '浏览器和服务器要交换数据。传输的方式会影响速度和可靠性。HTTP/1.1 早期为每个请求新建连接，代价很高。HTTP/2 引入多路复用，让多个请求共享一条连接。这减少了握手次数。'
+  },
+  40: {
+    label: '40% · 中度约束',
+    text: '浏览器与服务器交换数据。传输方式影响速度与可靠性。HTTP/1.1 为每个请求建立新连接。开销高。HTTP/2 使用多路复用。多个请求共用一个连接。握手次数减少。'
+  },
+  60: {
+    label: '60% · 接近 STE',
+    text: '浏览器与服务器交换数据。连接方式影响速度。HTTP/1.1 为每个请求建立新连接。系统开销高。HTTP/2 使用多路复用。多个请求共用一个连接。系统减少握手次数。'
+  },
+  80: {
+    label: '80% · Karpathy 推荐档',
+    text: '浏览器与服务器交换数据。连接影响速度。<b>HTTP/1.1</b> 为每个请求建立新连接。系统开销高。<b>HTTP/2</b> 使用多路复用。多个请求共用一个连接。系统减少握手次数。连接故障时，系统重试请求。'
+  },
+  100: {
+    label: '100% · 完整 ASD-STE100',
+    text: '浏览器与服务器交换数据。连接影响速度。HTTP/1.1 为每个请求建立新连接。系统开销高。HTTP/2 使用多路复用。多个请求共用一个连接。系统减少握手次数。连接发生故障。系统再次发送请求。'
+  }
+};
+const slider = document.getElementById('steSlider');
+const box = document.getElementById('morphBox');
+const val = document.getElementById('steVal');
+function paintSte(){
+  const k = slider.value;
+  val.textContent = (k === '80' ? '80% ★' : k + '%');
+  box.innerHTML = '<b>' + LEVELS[k].label + '</b><br><br>' + LEVELS[k].text;
+}
+slider.addEventListener('input', paintSte);
+paintSte();
+
+/* ---------- 复选框持久化 ---------- */
+const boxes = document.querySelectorAll('.check input');
+const KEY = 'karpathy-tweet-checklist';
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e){}
+boxes.forEach((b, i) => {
+  b.checked = !!saved[i];
+  b.addEventListener('change', () => {
+    saved[i] = b.checked;
+    try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(e){}
+  });
+});
+</script>
+</body>
+</html>
