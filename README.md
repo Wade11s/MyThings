@@ -8,6 +8,7 @@
 
 | 文件夹 | 内容 | 链接 |
 |---|---|---|
+| `CuaDriver/` | Cua Driver 自动化测试：ok 不是证据，夹具 E2E 与 verify_state | [/CuaDriver/](https://wade11s.github.io/MyThings/CuaDriver/) |
 | `Jev/` | Jev 模型深度调研 · 单文件交互式网页 | [/Jev/](https://wade11s.github.io/MyThings/Jev/) |
 | `OpenUI/` | OpenUI 生成式 UI 框架深度调研 · 交互图表 + 流式渲染演示 | [/OpenUI/](https://wade11s.github.io/MyThings/OpenUI/) |
 | `Karpathy/` | Karpathy 最新长推（2026-10-02）深度解析 · 四级输出格式阶梯可交互 | [/Karpathy/](https://wade11s.github.io/MyThings/Karpathy/) |

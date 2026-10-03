@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cua Driver 自动化测试 — 工具说成功，不算数</title>
+<style>
+:root{
+  --paper:#f6f4ef; --paper2:#fffdf8; --card:#fffefa;
+  --ink:#1c1b17; --ink2:#35322b; --muted:#6f6a5d; --faint:#9a9484;
+  --line:#e4ded0; --line2:#d5cebd;
+  --accent:#c2410c; --accent-dark:#9a3412; --accent-soft:#fbe9dd;
+  --blue:#1d4ed8; --blue-soft:#e3ebfd;
+  --green:#15803d; --green-soft:#e2f3e7;
+  --amber:#b45309; --amber-soft:#faeeda;
+  --red:#b91c1c; --red-soft:#fbe5e5;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),#f97316);z-index:1000}
+nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,239,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1160px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo{font-family:var(--serif);font-weight:900;font-size:18px;color:var(--ink);white-space:nowrap}
+.nav-logo em{color:var(--accent);font-style:normal}
+a.nav-logo{text-decoration:none}
+a.nav-logo:hover{color:var(--accent)}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.nav-links a{color:var(--muted);font-size:12.5px;padding:6px 8px;border-radius:6px;white-space:nowrap}
+.nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
+.nav-right{display:flex;align-items:center;gap:10px;min-width:0}
+@media(max-width:1080px){.nav-links{display:none}}
+.home-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(194,65,12,.3);border-radius:999px;padding:6px 13px;white-space:nowrap;transition:.15s}
+.home-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.home-btn .arw{transition:.2s}
+.home-btn:hover .arw{transform:translateX(-3px)}
+header.hero{background:radial-gradient(1100px 560px at 78% -12%,#f1e6d2 0%,transparent 55%),radial-gradient(800px 480px at 8% 120%,#f5e2d0 0%,transparent 50%),var(--paper);padding:132px 24px 72px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+header.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(28,27,23,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(28,27,23,.045) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(760px 460px at 50% 40%,#000 28%,transparent 75%);pointer-events:none}
+.hero-inner{max-width:1160px;margin:0 auto;position:relative}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:1.6px;color:var(--accent-dark);border:1px solid rgba(194,65,12,.35);background:var(--accent-soft);padding:6px 14px;border-radius:999px;margin-bottom:24px}
+.hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#f97316;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+h1.hero-title{font-family:var(--serif);font-size:clamp(42px,7vw,84px);font-weight:900;line-height:1.05}
+h1.hero-title em{font-style:normal;color:var(--accent)}
+h1.hero-title .sub{display:block;font-size:clamp(18px,2.6vw,28px);font-weight:600;color:#4a463c;margin-top:12px;letter-spacing:.03em}
+.hero-desc{max-width:780px;margin-top:22px;color:var(--ink2);font-size:17px}
+.hero-desc b{color:var(--ink)}
+.hero-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.chip{border:1px solid var(--line2);background:#fffefa;border-radius:10px;padding:10px 16px;font-size:13px;color:var(--muted);box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.chip b{display:block;font-family:var(--mono);font-size:18px;color:var(--accent-dark);font-weight:700}
+.hero-meta{margin-top:28px;font-size:13px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+main{max-width:1160px;margin:0 auto;padding:0 24px 80px}
+section{padding:72px 0 8px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.sec-no{font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:2px 9px;font-weight:700}
+h2{font-family:var(--serif);font-size:clamp(26px,3.6vw,38px);font-weight:900}
+.sec-lede{color:var(--muted);max-width:840px;margin-bottom:28px}
+.sec-lede b{color:var(--ink2)}
+h3{font-family:var(--serif);font-size:22px;font-weight:800;margin:36px 0 12px;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:8px;height:20px;background:var(--accent);border-radius:2px;flex:none}
+p.body{margin-bottom:14px;max-width:860px;color:var(--ink2)}
+p.body b{color:var(--ink)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.card h4{font-size:16.5px;font-weight:800;margin-bottom:8px}
+.card p{font-size:14px;color:var(--muted);line-height:1.75}
+.tag{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent-dark);font-weight:700}
+.tag.g{background:var(--green-soft);color:#14532d}
+.tag.a{background:var(--amber-soft);color:#7c4a03}
+.tag.b{background:var(--blue-soft);color:#1e3a8a}
+.tag.r{background:var(--red-soft);color:#7f1d1d}
+.callout{border-radius:12px;padding:16px 18px;margin:18px 0;font-size:14.5px;line-height:1.75;border:1px solid}
+.callout.warn{background:var(--amber-soft);border-color:#ecd3ae;color:#7c4a03}
+.callout.info{background:var(--blue-soft);border-color:#c3d5f8;color:#1e3a8a}
+.callout.good{background:var(--green-soft);border-color:#bfe3ca;color:#14532d}
+.callout.bad{background:var(--red-soft);border-color:#f0c9c9;color:#7f1d1d}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);margin:18px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th{background:#efeadd;text-align:left;padding:11px 14px;font-weight:800;color:var(--ink2);border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+tr:last-child td{border-bottom:none}
+code,.mono{font-family:var(--mono);font-size:.92em}
+p code,li code,td code{background:#f3eee4;border-radius:5px;padding:1px 6px}
+pre{background:#f8f4ec;color:#3a372f;border-radius:12px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;border:1px solid var(--line)}
+pre .c{color:#9a9484}pre .k{color:#c2410c}pre .s{color:#15803d}
+.diagram{background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:22px 16px;margin:18px 0;overflow-x:auto}
+.diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.diag-cap{text-align:center;font-size:12.5px;color:var(--faint);margin-top:8px;font-family:var(--mono)}
+.playground{background:#fffefa;border:1px solid var(--line);border-radius:18px;padding:22px;margin:8px 0 18px;box-shadow:0 1px 2px rgba(30,25,15,.04)}
+.pg-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pg-tab{background:var(--paper2);border:1px solid var(--line2);color:var(--muted);font-family:var(--sans);font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer}
+.pg-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.pg-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+@media(max-width:900px){.pg-grid{grid-template-columns:1fr}}
+.desk{position:relative;height:340px;border-radius:14px;background:linear-gradient(180deg,#f3ecdf,#efe6d4);border:1px solid var(--line2);overflow:hidden}
+.win{position:absolute;background:#fffefa;border:1px solid var(--line2);border-radius:10px;box-shadow:0 10px 24px rgba(30,25,15,.08);overflow:hidden}
+.win .tb{height:28px;background:#efe8da;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:12px;color:var(--ink2);font-weight:700}
+.dots{display:inline-flex;gap:4px}
+.dots i{width:8px;height:8px;border-radius:50%;background:#e7b8a4;display:block}
+.win .bd{padding:12px 14px;font-size:13px;color:var(--ink2)}
+.win.editor{left:18px;top:22px;width:250px;z-index:2}
+.win.harness{right:22px;top:78px;width:250px;z-index:1}
+.desk.stolen .win.editor{z-index:1;opacity:.72}
+.desk.stolen .win.harness{z-index:3;top:36px}
+.focus-pill{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--green-soft);color:#14532d;border-radius:99px;padding:1px 7px;font-weight:700}
+.desk.stolen .editor .focus-pill{background:var(--red-soft);color:#7f1d1d}
+.count{font-family:var(--mono);font-size:42px;font-weight:800;color:var(--accent-dark);line-height:1}
+.fake-btn{margin-top:8px;border:1px solid var(--line2);background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:700}
+.fake-btn.hot{outline:2px solid var(--accent);background:var(--accent-soft)}
+.journal{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cur{position:absolute;width:14px;height:14px;border-radius:50%;z-index:5;transition:left .45s ease,top .45s ease}
+.cur.real{background:#1d4ed8;left:70px;top:120px;box-shadow:0 0 0 4px rgba(29,78,216,.15)}
+.cur.agent{background:#c2410c;left:430px;top:230px;box-shadow:0 0 0 4px rgba(194,65,12,.18)}
+.desk.stolen .cur.real{left:300px;top:150px}
+.legend{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend b{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.log{background:#f8f4ec;border:1px solid var(--line);border-radius:12px;min-height:250px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.7;color:#3a372f;white-space:pre-wrap}
+.log .bad{color:#b91c1c}.log .ok{color:#15803d}.log .dim{color:#9a9484}
+.pg-run{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.btn{background:var(--accent);color:#fff;border:none;font-weight:700;font-size:14px;padding:10px 18px;border-radius:10px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:wait}
+.btn.ghost{background:#fff;color:var(--ink2);border:1px solid var(--line2)}
+.verdict{margin-top:12px;display:none;border-radius:10px;padding:12px 14px;font-size:14px}
+.verdict.show{display:block}
+.verdict.fail{background:var(--red-soft);color:#7f1d1d}
+.verdict.pass{background:var(--green-soft);color:#14532d}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.controls label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.controls select{font-family:var(--sans);font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--ink);min-width:140px}
+.cell-id{font-family:var(--mono);font-size:12.5px;color:var(--accent-dark);background:var(--accent-soft);display:inline-block;border-radius:8px;padding:4px 8px;margin-bottom:10px}
+ul.clean{margin:8px 0 0 18px;color:var(--ink2)}
+ul.clean li{margin:4px 0}
+.refs{font-size:14px;color:var(--ink2)}
+.refs li{margin:6px 0}
+footer.page{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pred-row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px}
+.pred-row label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.pred-row input,.pred-row select{font-family:var(--sans);font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--ink)}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.pill{font-family:var(--mono);font-size:11px;border-radius:99px;padding:3px 8px;border:1px solid var(--line2);color:var(--muted)}
+.pill.satisfied{background:var(--green-soft);color:#14532d;border-color:#bfe3ca}
+.pill.unsatisfied{background:var(--red-soft);color:#7f1d1d;border-color:#f0c9c9}
+.pill.unknown{background:var(--amber-soft);color:#7c4a03;border-color:#ecd3ae}
+.pill.rejected{background:#f3eee4;color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="../">Cua <em>Driver</em></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#split">两条测试</a>
+        <a href="#judge">判官</a>
+        <a href="#layers">三层</a>
+        <a href="#cell">一格</a>
+        <a href="#matrix">矩阵</a>
+        <a href="#loop">自己测</a>
+        <a href="#predicates">谓词</a>
+        <a href="#replay">回放</a>
+        <a href="#limits">边界</a>
+      </div>
+      <a class="home-btn" href="../" title="返回 MyThings 首页（目录页）"><span class="arw">←</span>首页</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-kicker"><span class="dot"></span>CUA DRIVER · 自动化测试 · 2026-10-03</span>
+    <h1 class="hero-title">工具说成功，<em>不算数</em>
+      <span class="sub">Cua Driver 怎么证明一次点击真的发生了</span>
+    </h1>
+    <p class="hero-desc">
+      Cua Driver 是计算机使用代理的界面层：读一个窗口的无障碍树和截图，再点击、输入、滚动。
+      它跑在<b>你已经有的那台机器</b>上，不是虚拟机。自动化测试因此不能看退出码。
+      一格通过，只因为<b>应用或桌面自己拥有的状态</b>变了；测后台时，用户的焦点还得留在原地。
+      精确的拒绝也算通过。一声不响的成功不算。
+    </p>
+    <div class="hero-chips">
+      <div class="chip"><b>3</b>层验证，Rust 是行为源头</div>
+      <div class="chip"><b>40</b>格 / 每个共享夹具应用</div>
+      <div class="chip"><b>unknown</b>永远不是通过</div>
+      <div class="chip"><b>0.31.0</b>本机契约，不是 CI 证书</div>
+    </div>
+    <div class="hero-meta">
+      <span>来源：trycua/cua 测试文档 + 公开平台账本 + 本机 describe</span>
+      <span>页内演示不调用驱动</span>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="split">
+  <div class="sec-head reveal"><span class="sec-no">00</span><h2>先把两件测试分开</h2></div>
+  <p class="sec-lede reveal">名字都叫「自动化测试」，问的却不是同一个问题。混在一起，就会用驱动的自测绿灯，去给自己的应用放行。</p>
+  <div class="grid g2 reveal">
+    <article class="card">
+      <h4><span class="tag">仓库</span> 驱动有没有按契约做事</h4>
+      <p>Rust 目录在真实桌面会话里驱动源码构建的夹具。格子通过与否，看夹具日记、无障碍读回、焦点哨兵和录像，不看工具自己说了什么。Python 不复制这套矩阵。</p>
+    </article>
+    <article class="card">
+      <h4><span class="tag g">你的应用</span> 这次操作有没有达成后置条件</h4>
+      <p>观察，用新鲜的 <code>element_token</code> 行动，再用 <code>verify_state</code> 或你自己的外部标记收口。<code>effect:"confirmed"</code> 只说明无障碍读回了，任务可以仍然没完成。</p>
+    </article>
+  </div>
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>你看见的信号</th><th>能不能当通过</th><th>它实际证明了什么</th></tr></thead>
+      <tbody>
+        <tr><td>工具返回 <code>ok</code>，进程退出码 0</td><td>不能</td><td>调用被接受了。Electron、Catalyst、网页内容可以回显一个没生效的写入。</td></tr>
+        <tr><td><code>effect:"confirmed"</code> / <code>verified:true</code></td><td>还不够</td><td>只有无障碍读回能让驱动自己确认。任务后置条件仍要另查。</td></tr>
+        <tr><td><code>effect:"unverifiable"</code></td><td>既不是过也不是挂</td><td>送达不能证明生效。去看夹具日记或新快照，不要立刻重试。</td></tr>
+        <tr><td><code>verify_state</code> = satisfied</td><td>能，在谓词范围内</td><td>1–8 个谓词的与，并且连续 <code>stable_samples</code> 次都满足。默认 2 次。</td></tr>
+        <tr><td><code>verify_state</code> = unknown</td><td>不能</td><td>匹配含糊、观察不到、网页状态不可信，或稳定样本不够。未知不是成功。</td></tr>
+        <tr><td>截图「看起来对」</td><td>不能单独算</td><td>驱动可以带回最终截图，但<b>不解释这张图</b>。解释是调用者的事。</td></tr>
+        <tr><td><code>replay_trajectory</code> 跑完</td><td>不能</td><td>它按原参数重放。pid、窗口号、token 都可能已经过期。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="judge">
+  <div class="sec-head reveal"><span class="sec-no">01</span><h2>四个格子，只有外部状态能判</h2></div>
+  <p class="sec-lede reveal">下面是契约模拟，不是在驱动你的桌面。蓝点是用户的真光标，橙点是代理自己的光标。后台格要求蓝点不动、笔记窗口保持焦点。</p>
+  <div class="playground reveal">
+    <div class="pg-tabs" id="case-tabs"></div>
+    <div class="pg-grid">
+      <div>
+        <div class="desk" id="desk">
+          <div class="win editor">
+            <div class="tb"><span class="dots"><i></i><i></i><i></i></span>笔记.md <span class="focus-pill" id="focus-pill">焦点在此</span></div>
+            <div class="bd">用户正在写字。后台测试不许把这个窗口顶掉，也不许挪动真光标。</div>
+          </div>
+          <div class="win harness">
+            <div class="tb"><span class="dots"><i></i><i></i><i></i></span>Counter Harness</div>
+            <div class="bd">
+              <div class="count" id="count">0</div>
+              <div class="fake-btn" id="inc">Increment</div>
+              <div class="journal" id="journal">fixture journal: counter=0</div>
+            </div>
+          </div>
+          <div class="cur real" title="真光标"></div>
+          <div class="cur agent" title="代理光标"></div>
+        </div>
+        <div class="legend"><span><b style="background:#1d4ed8"></b>真光标</span><span><b style="background:#c2410c"></b>代理光标</span></div>
+      </div>
+      <div>
+        <div class="log" id="log">选一格，再跑。日志会按观察 → 行动 → oracle 的顺序出现。</div>
+        <div class="pg-run">
+          <button class="btn" id="run-case" type="button">跑这一格</button>
+          <span class="cell-id" id="case-id">macos-electron-click-ax-background</span>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="layers">
+  <div class="sec-head reveal"><span class="sec-no">02</span><h2>驱动自己的三层验证</h2></div>
+  <p class="sec-lede reveal">根目录 <code>Development.md</code> 把 cua-driver 的验证写成三层。上层不能代替下层，下层也不能冒充上层。</p>
+  <div class="grid g3 reveal">
+    <article class="card">
+      <h4><span class="tag b">1</span> 单元与协议</h4>
+      <p>schema、传输、会话、元素身份、工具边界 fuzz。不启动仓库夹具，通常也不要桌面。它们证明驱动做了一个确定的决定，不证明点击进了应用。</p>
+    </article>
+    <article class="card">
+      <h4><span class="tag">2</span> 源码夹具 E2E</h4>
+      <p>Electron、Tauri，加上 AppKit、SwiftUI、WPF、WinUI 3、GTK3 等。多数用例标了 <code>#[ignore]</code>，由各 OS 的规范 runner 在交互式桌面里挑选。这是桌面行为的源头。</p>
+    </article>
+    <article class="card">
+      <h4><span class="tag a">3</span> 已安装应用</h4>
+      <p>macOS 的 Calculator / TextEdit 在规范登录车道里，是补充，不取代夹具。LibreOffice Writer 只覆盖 Windows 的 MSAA 回退，缺了就失败，但不是 run-all 的一部分。</p>
+    </article>
+  </div>
+  <div class="callout info reveal"><b>普通 CI 绿灯 ≠ 桌面绿灯。</b> 单元门禁止跑被 ignore 的 GUI 测试，也不许把「夹具没装」变成静默跳过。桌面格需要已登录的交互会话：Windows 不能在 Session 0；macOS 需要辅助功能和屏幕录制；Linux 的 X11 与 Wayland 是两列，不能互相继承。</div>
+</section>
+
+<section id="cell">
+  <div class="sec-head reveal"><span class="sec-no">03</span><h2>一格测试实际在跑什么</h2></div>
+  <p class="sec-lede reveal">四个所有者各管一段。测试文件不负责装系统，夹具应用不负责断言驱动对不对，runner 不负责改预期。</p>
+  <div class="diagram reveal">
+    <svg viewBox="0 0 980 168" role="img" aria-label="一格 E2E 的七步">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1.2 L 8 5 L 0 8.8 z" fill="#c2410c"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#35322b">
+        <g>
+          <rect x="8" y="46" width="118" height="64" rx="10" fill="#fffefa" stroke="#d5cebd"/>
+          <text x="67" y="74" text-anchor="middle" font-weight="700">OS runner</text>
+          <text x="67" y="92" text-anchor="middle" fill="#6f6a5d">建驱动和夹具</text>
+        </g>
+        <path d="M130 78 H150" stroke="#c2410c" marker-end="url(#arr)"/>
+        <g>
+          <rect x="154" y="46" width="118" height="64" rx="10" fill="#fffefa" stroke="#d5cebd"/>
+          <text x="213" y="74" text-anchor="middle" font-weight="700">testkit</text>
+          <text x="213" y="92" text-anchor="middle" fill="#6f6a5d">拉起一个夹具</text>
+        </g>
+        <path d="M276 78 H296" stroke="#c2410c" marker-end="url(#arr)"/>
+        <g>
+          <rect x="300" y="46" width="130" height="64" rx="10" fill="#fffefa" stroke="#d5cebd"/>
+          <text x="365" y="74" text-anchor="middle" font-weight="700">get_window_state</text>
+          <text x="365" y="92" text-anchor="middle" fill="#6f6a5d">树 + 截图</text>
+        </g>
+        <path d="M434 78 H454" stroke="#c2410c" marker-end="url(#arr)"/>
+        <g>
+          <rect x="458" y="28" width="150" height="52" rx="10" fill="#fbe9dd" stroke="#e7c3b0"/>
+          <text x="533" y="50" text-anchor="middle" font-weight="700">AX 或 PX</text>
+          <text x="533" y="66" text-anchor="middle" fill="#9a3412">后台或前台</text>
+          <rect x="458" y="90" width="150" height="52" rx="10" fill="#fffefa" stroke="#d5cebd"/>
+          <text x="533" y="112" text-anchor="middle" font-weight="700">夹具 oracle</text>
+          <text x="533" y="128" text-anchor="middle" fill="#6f6a5d">状态文件 / 日记</text>
+        </g>
+        <path d="M612 78 H632" stroke="#c2410c" marker-end="url(#arr)"/>
+        <g>
+          <rect x="636" y="46" width="150" height="64" rx="10" fill="#faeeda" stroke="#ecd3ae"/>
+          <text x="711" y="74" text-anchor="middle" font-weight="700">桌面哨兵</text>
+          <text x="711" y="92" text-anchor="middle" fill="#7c4a03">焦点 / 叠放 / 光标</text>
+        </g>
+        <path d="M790 78 H810" stroke="#c2410c" marker-end="url(#arr)"/>
+        <g>
+          <rect x="814" y="46" width="150" height="64" rx="10" fill="#e2f3e7" stroke="#bfe3ca"/>
+          <text x="889" y="74" text-anchor="middle" font-weight="700">证据落盘</text>
+          <text x="889" y="92" text-anchor="middle" fill="#14532d">mp4 + trajectory</text>
+        </g>
+      </g>
+    </svg>
+    <p class="diag-cap">工具 ok 只出现在中间。左右两侧的 oracle 才决定格子。</p>
+  </div>
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>谁</th><th>拥有</th><th>不拥有</th></tr></thead>
+      <tbody>
+        <tr><td>Rust 集成测试</td><td>场景、驱动调用、断言、动作元数据</td><td>装系统、编译夹具</td></tr>
+        <tr><td><code>cua-driver-testkit</code></td><td>会话、拉起夹具、截图、录像、轨迹</td><td>场景清单</td></tr>
+        <tr><td>夹具应用</td><td>看得见的控件，以及外部可观察的状态标记</td><td>「驱动对不对」的断言</td></tr>
+        <tr><td>OS runner</td><td>构建环境、用户会话、用例选择、收集产物</td><td>改测试行为的定义</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn reveal"><b>哨兵自己要先被证明能失败。</b> 行为格开始前，预检会故意向盖住目标的 Electron 哨兵注入输入，并故意把后台目标抬起来。只有泄漏和短暂失焦都被观察到、哨兵再恢复全遮挡，这一车道的结果才可信。一个坏掉的守卫会让每一格后台测试看起来都是绿的。</div>
+  <p class="body reveal">规范入口不靠你自己拼 <code>cargo test</code> 过滤器。Windows 是 <code>scripts/ci/windows/run-rust-e2e.ps1 -RequireGui</code>；Linux 是 <code>scripts/ci/linux/run-rust-e2e.sh</code>；macOS 验收在已登录的 Lume 车道 <code>libs/cua-driver/tests/runners/macos-lume/run-all.sh</code>。未过滤的共享跑还要求最少格子数：Windows / Linux 80，macOS 120。对上 0 个格子仍然失败。</p>
+</section>
+
+<section id="matrix">
+  <div class="sec-head reveal"><span class="sec-no">04</span><h2>矩阵是维度，不是一张成绩单</h2></div>
+  <p class="sec-lede reveal">切片器只根据仓库文档<b>推导这一格必须证明什么</b>。它不知道你手头的 0.31.0 二进制上次 CI 绿没绿。选一个「这个 OS 根本没有的夹具」，会看到继承覆盖率有多容易。</p>
+  <div class="playground reveal">
+    <div class="controls">
+      <label>系统
+        <select id="m-os">
+          <option value="macos">macOS</option>
+          <option value="windows">Windows</option>
+          <option value="linux-x11">Linux X11</option>
+          <option value="linux-wayland">Linux Wayland</option>
+        </select>
+      </label>
+      <label>表面
+        <select id="m-harness">
+          <option value="electron">Electron</option>
+          <option value="tauri">Tauri</option>
+          <option value="wkwebview">WKWebView</option>
+          <option value="appkit">AppKit</option>
+          <option value="swiftui">SwiftUI</option>
+          <option value="wpf">WPF</option>
+          <option value="winui3">WinUI 3</option>
+          <option value="webview2">WebView2</option>
+          <option value="gtk3">GTK3</option>
+        </select>
+      </label>
+      <label>动作
+        <select id="m-action">
+          <option value="click">左键 click</option>
+          <option value="type_text">type_text</option>
+          <option value="scroll">scroll</option>
+          <option value="drag">drag</option>
+          <option value="hotkey">hotkey</option>
+        </select>
+      </label>
+      <label>寻址
+        <select id="m-addr">
+          <option value="ax">AX 元素</option>
+          <option value="px">PX 像素</option>
+        </select>
+      </label>
+      <label>投递
+        <select id="m-del">
+          <option value="background">background</option>
+          <option value="foreground">foreground</option>
+        </select>
+      </label>
+    </div>
+    <div id="matrix-out"></div>
+  </div>
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>维度</th><th>取值</th><th>不要理解成</th></tr></thead>
+      <tbody>
+        <tr><td>寻址 AX</td><td>无障碍 / UI Automation / AT-SPI 元素动作</td><td>不是截图模式。树和截图是同一次观察。</td></tr>
+        <tr><td>寻址 PX</td><td>同一张截图上的坐标</td><td>不保证走物理指针。后台像素仍可能被命中测试后改走语义动作。</td></tr>
+        <tr><td>后台</td><td>不抬窗口、不抢前台、不挪真光标</td><td>不是「用户完全无感的所有手势」。做不到就结构化拒绝。</td></tr>
+        <tr><td>前台</td><td>允许把目标带到前面</td><td>不是所有平台都会恢复你原来的前台应用。</td></tr>
+        <tr><td>窗口 / 桌面</td><td>一次调用自己选目标</td><td>会话不是捕获范围，也不是权限。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="fixtures">
+  <div class="sec-head reveal"><span class="sec-no">05</span><h2>夹具卖的是外部标记，不是另一个点击器</h2></div>
+  <p class="sec-lede reveal">共享页面 <code>tests/fixtures/shared/web/index.html</code> 被 Electron 和 Tauri 加载；macOS 的 WKWebView 宿主再跑同一份目录。控件旁边有测试能读到的标记，而不是把「再点一次」当成断言。</p>
+  <div class="grid g2 reveal">
+    <article class="card">
+      <h4>为什么必须源码构建</h4>
+      <p>已安装的 Chrome 版本、用户配置、窗口位置每台机器都不一样。夹具从仓库编译，标识写在 <code>shared/scenarios.json</code>。二进制不进 git。缺夹具在规范跑里是失败，不是跳过。</p>
+    </article>
+    <article class="card">
+      <h4>oracle 长什么样</h4>
+      <p>共享格看动作专用的外部标记。Windows 前台文本还会读夹具原子替换的状态文件，对照 CJK、数字、emoji 和换行，只规范化换行符。焦点断言证明「没抢焦点」，证明不了「应用变了」——两样都要。</p>
+    </article>
+  </div>
+  <p class="body reveal">共享目录写明：每个夹具应用 40 个带证据的格子，覆盖点击、文本、键盘、先输入再回车、滚动、子窗口的 AX/PX × 前台/后台，以及 PX 拖拽和 AX 编辑器保存的两种投递。后台拒绝只有在<b>声明过的错误码</b>加上无焦点、无叠放变化、无输入泄漏时才算有效观察。要求送达的格子，拒绝就是失败。</p>
+</section>
+
+<section id="evidence">
+  <div class="sec-head reveal"><span class="sec-no">06</span><h2>证据绑在那一次提交上</h2></div>
+  <p class="sec-lede reveal">规范 GUI 格要留下可解析的事前/事后状态、非空的目标窗口图、轨迹和 MP4。单元测试要日志，不要桌面录像。</p>
+  <div class="grid g3 reveal">
+    <article class="card"><h4>录像</h4><p>夹具就绪、前后台姿态摆好之后才开始。派发前有 300 ms 基线，一直录到外部 oracle 收完。<code>trajectory.json</code> 必须以 <code>behavior_video.status = "finalized"</code> 结束。runner 用 ffprobe 检查 MP4。</p></article>
+    <article class="card"><h4>每一步</h4><p>动作前后的无障碍状态和目标窗口图。窗口捕获即使被别的窗口挡住，仍然只框那一个目标。共享行为矩阵的守护进程故意加 <code>--no-overlay</code>，免得代理光标像素污染 oracle。</p></article>
+    <article class="card"><h4>报告</h4><p><code>cases.jsonl</code> 声明预期，<code>results.jsonl</code> 记录观察到的行为。GitHub 摘要一行一格，链到该车道归档里的精确录像路径。缺了预期证据，报告失败。有一处窄例外：Windows 成功的 <code>bring_to_front</code> 恢复，最小化目标可以没有事前图。</p></article>
+  </div>
+</section>
+
+<section id="platforms">
+  <div class="sec-head reveal"><span class="sec-no">07</span><h2>「支持」的意思是有夹具证据</h2></div>
+  <p class="sec-lede reveal">公开平台页把支持分成三档：规范 Rust 夹具证明了应用或桌面状态，才叫 Supported。常见路径证明了、其余形状会结构化拒绝，叫 Supported with limits。后端在、代表覆盖不全，叫 Experimental。未列出的动作不要假设能用。</p>
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>平台</th><th>公开账本里的状态</th><th>测试时最容易误判的边界</th></tr></thead>
+      <tbody>
+        <tr><td>Windows</td><td>Supported。规范覆盖 Electron、Tauri、WPF、WinUI 3、WebView2</td><td>守护进程必须在交互会话，不能在 Session 0。部分后台 Chromium 手势和提升完整性边界仍不可用或未证明。</td></tr>
+        <tr><td>macOS</td><td>Supported。规范覆盖 Electron、Tauri、AppKit、SwiftUI、WKWebView</td><td>需要辅助功能与屏幕录制，权限属于 <code>CuaDriver.app</code>，不是启动它的终端。不在当前 Space 的 SwiftUI 窗口会按系统设计丢掉树。部分后台滚动和拖拽是结构化拒绝。AppKit 后台拖拽被写成精确拒绝。</td></tr>
+        <tr><td>Linux X11</td><td>Supported with toolkit limits</td><td>X11 收下事件，不等于应用处理了。拒绝合成后台事件的工具包应得到明确拒绝，而不是静默成功。</td></tr>
+        <tr><td>Linux Wayland</td><td>按合成器记账，不是一个统一 API</td><td>语义 AT-SPI 动作可以在不抬窗口的情况下成立。任意原始后台像素注入对普通客户端不可用：知道坐标改变不了合成器把事件送给谁。Sway 有完整目录；GNOME / KDE / Hyprland 不能继承它。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn reveal"><b>Hyprland 的原始后台输入是带资格的例外，不是「Wayland 已支持」。</b> 平台页记录的资格是 LibreOffice Calc <code>26.2.5-3</code> 和 Inkscape <code>1.4.4-6</code>，证据日期 2026-09-07。插件默认关闭。普通 GTK、Electron、Tauri 夹具不能用来证明这条插件投递。前台路由会改焦点和光标，并且不承诺恢复。派发确认仍然不是应用效果。</div>
+  <p class="body reveal">浏览器变异必须从精确的 <code>(pid, window_id)</code> 绑定开始。独立 Chrome / Edge 在 Windows、macOS、Linux X11 上有已证明的页面路由，但信任级别不同：macOS 和 Linux X11 上，受信任的 CDP 指针输入会在派发前返回 <code>browser_input_trust_unavailable</code>。Safari 和 Firefox 只有原生发现和 AX/PX 回退，没有已广告的类型化浏览器变异引擎。Tauri、WKWebView、WebKitGTK 和常见的分裂进程 WebView2，文档写的是身份加上无副作用的结构化拒绝。</p>
+</section>
+
+<section id="loop">
+  <div class="sec-head reveal"><span class="sec-no">08</span><h2>用它测你自己的窗口</h2></div>
+  <p class="sec-lede reveal">抄判据，不要抄目录。你的应用如果没有外部标记，<code>verify_state</code> 只能检查无障碍投影表达得了的那一部分。</p>
+  <pre class="reveal"><span class="c"># 同一条 MCP 连接或一次 SDK 会话里做完这三步。
+# 不要拆成三次 cua-driver call —— 每次 call 都是一个一次性会话。</span>
+<span class="k">get_window_state</span> { <span class="s">"pid"</span>: 844, <span class="s">"window_id"</span>: 10725, <span class="s">"include_screenshot"</span>: false }
+
+<span class="k">click</span> {
+  <span class="s">"target"</span>: { <span class="s">"kind"</span>: <span class="s">"window"</span>, <span class="s">"pid"</span>: 844, <span class="s">"window_id"</span>: 10725 },
+  <span class="s">"element_token"</span>: <span class="s">"&lt;这次快照 elements[] 里的 token&gt;"</span>,
+  <span class="s">"delivery_mode"</span>: <span class="s">"background"</span>
+}
+
+<span class="k">verify_state</span> {
+  <span class="s">"pid"</span>: 844,
+  <span class="s">"window_id"</span>: 10725,
+  <span class="s">"stable_samples"</span>: 2,
+  <span class="s">"expect"</span>: [
+    { <span class="s">"element"</span>: { <span class="s">"selector"</span>: { <span class="s">"label_contains"</span>: <span class="s">"Count"</span> }, <span class="s">"value_equals"</span>: <span class="s">"1"</span> } }
+  ]
+}</pre>
+  <div class="playground reveal">
+    <div class="pg-tabs" id="sess-tabs">
+      <button class="pg-tab active" type="button" data-sess="mcp">同一条 MCP / SDK 会话</button>
+      <button class="pg-tab" type="button" data-sess="oneshot">两次 cua-driver call</button>
+    </div>
+    <div id="sess-out"></div>
+  </div>
+  <h3>行动之后看哪个字段</h3>
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>字段</th><th>下一步</th></tr></thead>
+      <tbody>
+        <tr><td><code>confirmed</code></td><td>有可读回的发布。仍要核对任务后置条件。</td></tr>
+        <tr><td><code>partial</code></td><td>只有报告的那一部分落地了。先看，再修。</td></tr>
+        <tr><td><code>unverifiable</code></td><td>不能用「再点一次」当验证。先重新观察。延迟的提供者可能在调用返回后才发布，立刻重试会把字打重。</td></tr>
+        <tr><td><code>suspected_noop</code></td><td>现有证据像是没发生有用的变化。</td></tr>
+        <tr><td><code>refused</code> + <code>stale_element_token</code></td><td>快照已被更新的读取作废。重新观察。不是「元素路由坏了」。</td></tr>
+        <tr><td><code>escalation</code></td><td>建议下一档：像素、页面或前台。它不是授权，也不会自动重试。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="body reveal">0.31.0 的 <code>click</code> 写明了阶梯：后台 AX（<code>element_token</code>）→ 快照 → 后台像素 → 快照 → <code>delivery_mode:"foreground"</code>。token 优于坐标，因为它能点到后台、最小化、隐藏、甚至不在当前 Space 的窗口，并且标明角色和标签。像素留给画布、视频、WebGL 这些树上没有的东西。带修饰键的点击要求前台，因为 macOS 要看到真实的修饰键状态。</p>
+  <div class="callout good reveal"><b>最好的应用测试，是夹具那一套的缩小版。</b> 给窗口一个测试能读到、用户路径也会写到的标记：计数器文件、状态接口、无障碍值。只靠「按钮还在」证明不了点击被接受了。驱动测浏览器夹具时，甚至用单独的 <code>/state</code> 端点确认输入值，而不是相信输入框的回显。</div>
+</section>
+
+<section id="predicates">
+  <div class="sec-head reveal"><span class="sec-no">09</span><h2>verify_state 试验台</h2></div>
+  <p class="sec-lede reveal">左边是写死的假窗口，右边按 0.31.0 的 schema 规则演算。这不是活的驱动调用。假窗口的元素遍历<b>没有</b>被标成穷尽，所以「找不到」是 unknown，不是 unsatisfied。</p>
+  <div class="playground reveal">
+    <div class="pg-grid">
+      <div>
+        <h3 style="margin-top:0">假窗口 pid 844 / window 10725</h3>
+        <div class="card" style="margin-bottom:12px">
+          <p>标题 Counter。边界 (120, 80) 480×320。</p>
+          <p style="margin-top:8px">AXButton「Increment」启用。</p>
+          <p>AXStaticText「Count」值 = <b id="fake-count">3</b>。</p>
+          <p>AXCheckBox「Saved」未选中。</p>
+        </div>
+        <div class="pills" id="presets"></div>
+        <div class="pred-row">
+          <label>检查
+            <select id="p-kind">
+              <option value="value">元素 value_equals</option>
+              <option value="exists">元素 exists</option>
+              <option value="enabled">元素 enabled</option>
+              <option value="selected">元素 selected</option>
+              <option value="absent">元素 exists:false（应被拒绝）</option>
+              <option value="window">窗口 exists</option>
+              <option value="bounds">窗口 bounds</option>
+            </select>
+          </label>
+          <label>label_contains
+            <input id="p-label" value="Count">
+          </label>
+          <label>期望
+            <input id="p-exp" value="3">
+          </label>
+          <button class="btn ghost" id="p-add" type="button">加入谓词</button>
+        </div>
+        <label style="font-size:13px;color:var(--muted)"><input type="checkbox" id="p-drift"> 第二次采样时 Count 从 3 漂到 4（稳定样本失败）</label>
+      </div>
+      <div>
+        <div class="log" id="p-log">还没有谓词。最多 8 个，逻辑与。</div>
+        <div class="pg-run">
+          <button class="btn" id="p-run" type="button">演算</button>
+          <button class="btn ghost" id="p-clear" type="button">清空</button>
+        </div>
+        <div class="verdict" id="p-verdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout info reveal">schema 还拒绝把「不存在」写成 <code>exists:false</code>：与其返回一个永远未知的谓词，不如在入口拒绝。窗口谓词可以检查 <code>exists</code> 和带 0–100 px 容差的 bounds。等待默认 5000 ms，最大 10000；<code>timeout_ms:0</code> 只采样一次。<code>include_screenshot:true</code> 把最后一张图交给多模态调用者，驱动仍然不解释它。</div>
+</section>
+
+<section id="replay">
+  <div class="sec-head reveal"><span class="sec-no">10</span><h2>录制是证据，回放不是回归脚本</h2></div>
+  <p class="sec-lede reveal">轨迹适合回答「刚才发生了什么」。它不适合当成明天还能跑的测试。回放是一次新的动作序列，不是语义规划器。</p>
+  <div class="grid g2 reveal">
+    <article class="card">
+      <h4>一次录制留下什么</h4>
+      <p>必须在<b>同一条持久 MCP 连接</b>上 <code>start_recording</code> → 行动并验证 → <code>stop_recording</code>。视频默认关，要显式 <code>record_video:true</code>。每个 <code>turn-NNNNN/</code> 有前后状态、前后图、<code>action.json</code> 和 <code>evidence.json</code>。看 <code>video_active</code> 和 <code>last_error</code>，不要只看工具成功。文件路径不等于片子能播。</p>
+    </article>
+    <article class="card">
+      <h4>为什么不能当脚本</h4>
+      <p><code>replay_trajectory</code> 按词典序重放原参数，只接受目录、<code>delay_ms</code>、<code>stop_on_error</code>。只读快照不在动作序列里，所以它不会刷新元素句柄。记录下来的 pid、窗口号、token、浏览器 ref 和几何都可能过期。像素和按键同样依赖当初的目标身份、布局和焦点。</p>
+    </article>
+  </div>
+  <div class="callout bad reveal"><b>取消、部分成功、未知结果，不许重放来「看看当时到底点没点上」。</b> 传输中断时，输入可能已经送出，响应却丢了。回放期间如果录制还开着，回放自己会被记成新的 turn。源目录和输出目录必须分开。一个运行时只有一个录像机，<code>stop_recording</code> 会停掉当前那个，不管是谁开始的。</div>
+</section>
+
+<section id="limits">
+  <div class="sec-head reveal"><span class="sec-no">11</span><h2>写测试前先接受的边界</h2></div>
+  <div class="grid g2 reveal">
+    <article class="card"><h4>一台桌面，一个控制者</h4><p>不同会话不隔离焦点、键盘、应用状态和快照缓存。原生输入一次只放行一个动作。并行 GUI 测试会互相踩。macOS 上如果别的 MCP 客户端连着同一个守护进程，它还能改掉你正在断言的录制状态。专注跑要用专用 socket。</p></article>
+    <article class="card"><h4>后台做不到，就拒绝</h4><p><code>background_unavailable</code> 是契约的一部分，不是「没藏好」。Wayland 上，坐标告诉驱动窗口在哪，改变不了合成器的座位把原始事件送给谁。测试应断言拒绝码和「没有副作用」，而不是重试到前台。</p></article>
+    <article class="card"><h4>权限在运行时身份上</h4><p>macOS 的辅助功能和屏幕录制属于 <code>CuaDriver.app</code>（<code>com.trycua.driver</code>），不是终端。Windows 上 SSH 进 Session 0 的进程看不见桌面。权限状态不是「现在真的录得到」的证明。</p></article>
+    <article class="card"><h4>版本不要焊死成证书</h4><p>本页的目录规模和 runner 来自 2026-10-03 的 <code>main</code>。本机二进制是 0.31.0，用来核对 <code>click</code> / <code>verify_state</code> 的字段。技能包版本标识它的来源发布，不是正在跑的守护进程，更不是「整份 E2E 已通过」。</p></article>
+  </div>
+  <p class="body reveal">还有一些表面根本不在规范矩阵里：GTK4、Qt、VTE、GL 画布不能用 Electron/Tauri 的共享覆盖来冒充。感知扩展的捕获循环是单独车道：点击必须带同一次 <code>capture_id</code>，用过的捕获返回 <code>capture_not_found</code>，超过寿命返回 <code>capture_expired</code>，而且这两种拒绝都不能改变夹具。那是另一条测试契约，不是默认驱动的一部分。</p>
+</section>
+
+<section id="sources">
+  <div class="sec-head reveal"><span class="sec-no">12</span><h2>来源</h2></div>
+  <ul class="refs reveal">
+    <li><a href="https://github.com/trycua/cua/blob/main/libs/cua-driver/docs/test-matrix.md">libs/cua-driver/docs/test-matrix.md</a> — 单元 / E2E 分层、40/80/120 格、维度、CI 入口</li>
+    <li><a href="https://github.com/trycua/cua/blob/main/libs/cua-driver/docs/test-harnesses-guide.md">docs/test-harnesses-guide.md</a> — 所有者、哨兵预检、证据、禁止跳过</li>
+    <li><a href="https://github.com/trycua/cua/blob/main/libs/cua-driver/rust/crates/cua-driver-e2e/tests/README.md">cua-driver-e2e/tests/README.md</a> — 忽略的桌面测试由谁挑选、已安装应用哪些不算 run-all</li>
+    <li><a href="https://github.com/trycua/cua/blob/main/libs/cua-driver/tests/fixtures/README.md">tests/fixtures/README.md</a> — 源码夹具布局，不提交二进制</li>
+    <li><a href="https://github.com/trycua/cua/blob/main/Development.md">Development.md</a> — 三层验证的贡献者地图</li>
+    <li><a href="https://cua.ai/docs/reference/cua-driver/platform-support">Platform Support</a> — 支持档位、浏览器路由、Wayland / Hyprland 边界</li>
+    <li><a href="https://cua.ai/docs/cua-driver/concepts/how-cua-driver-works">How Cua Driver works</a> — 目标、后台阶梯、<code>ok</code> 不是证据、一次性 <code>call</code> 会话</li>
+    <li>本机 <code>cua-driver 0.31.0</code>：<code>describe click</code>、<code>describe verify_state</code>，以及同版本技能包的录制说明</li>
+  </ul>
+  <div class="callout warn reveal">2026-10-03 抓取 <code>Development.md</code> 指向的 <code>/cua-driver/concepts/how-cua-driver-is-validated</code> 时，文档站把它重定向到了 *How Cua Driver works*。验证分层因此以仓库内贡献者文档为准。搜索结果里的页面摘要没有被当成正文引用。</div>
+  <footer class="page">
+    <span>MyThings · 自包含静态页 · 无外部依赖</span>
+    <span><a href="../">返回首页</a></span>
+  </footer>
+</section>
+</main>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+const bar = $('#progress');
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const max = h.scrollHeight - h.clientHeight;
+  bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+}, {passive:true});
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }), {threshold:.12});
+$$('.reveal').forEach(el => io.observe(el));
+
+const CASES = [
+  {
+    id:'silent', name:'静默成功',
+    driver:'ok=true  effect=unverifiable',
+    counter:0, stolen:false,
+    lines:[
+      ['dim','[observe] get_window_state  tree=Increment, Count=0'],
+      ['',    '[act] click element_token=e1  delivery=background'],
+      ['',    '[driver] ok=true  effect=unverifiable  verified=false'],
+      ['bad', '[oracle:fixture] journal counter 0 → 0'],
+      ['ok',  '[oracle:desktop] 焦点、叠放、真光标都没动'],
+      ['bad', '[result] FAIL  工具没报错，应用状态没变。这就是静默成功。']
+    ],
+    verdict:'fail',
+    why:'退出码和 ok 只说明调用被接受。夹具自己的日记没变，格子失败。Electron 可以回显一个没生效的写入。'
+  },
+  {
+    id:'landed', name:'夹具变了',
+    driver:'ok=true  effect=unverifiable',
+    counter:1, stolen:false,
+    lines:[
+      ['dim','[observe] Count=0，笔记.md 仍是前台'],
+      ['',    '[act] click element_token=e1  delivery=background'],
+      ['',    '[driver] effect=unverifiable  —— 驱动自己读不回'],
+      ['ok',  '[oracle:fixture] journal counter 0 → 1'],
+      ['ok',  '[oracle:desktop] 焦点、叠放、真光标未变'],
+      ['ok',  '[result] PASS  通过来自夹具日记，不来自 effect。']
+    ],
+    verdict:'pass',
+    why:'unverifiable 不是自动失败。外部标记证明点击落地，桌面哨兵证明没有打扰用户。驱动的自我报告两边都不是判官。'
+  },
+  {
+    id:'refuse', name:'精确拒绝',
+    driver:'refused  background_unavailable',
+    counter:0, stolen:false,
+    lines:[
+      ['dim','[contract] 这一格预期拒绝，不是预期送达'],
+      ['',    '[act] drag  background  —— 例如 AppKit 后台拖拽，或无路由的 Wayland 原始像素'],
+      ['',    '[driver] refused  code=background_unavailable'],
+      ['ok',  '[oracle:fixture] 日记没变'],
+      ['ok',  '[oracle:desktop] 没有抬窗口，没有输入泄漏'],
+      ['ok',  '[result] PASS  精确拒绝 + 无副作用，是有效观察。']
+    ],
+    verdict:'pass',
+    why:'做不到的后台路由应该拒绝，而不是假装成功。只有契约写明了这个错误码，拒绝才算通过。要求送达的格子里，同样的拒绝是失败。'
+  },
+  {
+    id:'steal', name:'抢了焦点',
+    driver:'ok=true  counter 变了',
+    counter:1, stolen:true,
+    lines:[
+      ['dim','[observe] 前台应保持为笔记.md'],
+      ['',    '[act] click  delivery=background'],
+      ['ok',  '[oracle:fixture] journal counter 0 → 1'],
+      ['bad', '[oracle:desktop] 笔记.md 失焦，真光标被挪走'],
+      ['bad', '[result] FAIL  应用变了，但后台契约破了。']
+    ],
+    verdict:'fail',
+    why:'后台格有两个必须同时成立的结果：目标状态按契约变化，以及用户的前台、叠放、真光标不动。只证明其中一个，格子仍然失败。'
+  }
+];
+
+let current = CASES[0];
+let timer = 0;
+const tabs = $('#case-tabs');
+CASES.forEach((c,i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'pg-tab' + (i===0 ? ' active' : '');
+  b.textContent = c.name;
+  b.onclick = () => { current = c; $$('#case-tabs .pg-tab').forEach(x => x.classList.remove('active')); b.classList.add('active'); resetCase(); };
+  tabs.appendChild(b);
+});
+
+function resetCase(){
+  clearInterval(timer);
+  $('#desk').classList.remove('stolen');
+  $('#count').textContent = '0';
+  $('#journal').textContent = 'fixture journal: counter=0';
+  $('#focus-pill').textContent = '焦点在此';
+  $('#inc').classList.remove('hot');
+  $('#log').textContent = '这一格的驱动信号：' + current.driver + '\n点「跑这一格」看 oracle 怎么判。';
+  $('#verdict').className = 'verdict';
+  $('#run-case').disabled = false;
+}
+resetCase();
+
+$('#run-case').onclick = () => {
+  const c = current;
+  $('#run-case').disabled = true;
+  $('#verdict').className = 'verdict';
+  $('#desk').classList.remove('stolen');
+  $('#count').textContent = '0';
+  $('#inc').classList.add('hot');
+  const log = $('#log');
+  log.textContent = '';
+  let i = 0;
+  timer = setInterval(() => {
+    if (i >= c.lines.length){
+      clearInterval(timer);
+      $('#count').textContent = String(c.counter);
+      $('#journal').textContent = 'fixture journal: counter=' + c.counter;
+      $('#inc').classList.remove('hot');
+      if (c.stolen){ $('#desk').classList.add('stolen'); $('#focus-pill').textContent = '失焦'; }
+      const box = $('#verdict');
+      box.className = 'verdict show ' + c.verdict;
+      box.innerHTML = '<b>' + (c.verdict === 'pass' ? '通过' : '失败') + '。</b> ' + c.why;
+      $('#run-case').disabled = false;
+      return;
+    }
+    const [cls, text] = c.lines[i++];
+    const span = document.createElement('div');
+    span.className = cls;
+    span.textContent = text;
+    log.appendChild(span);
+  }, 280);
+};
+
+const HARNESS = {
+  electron:{os:['macos','windows','linux-x11','linux-wayland'], note:'与 Tauri 共用 shared/web。macOS、Windows、Linux X11 和托管 Sway 有这份共享矩阵。'},
+  tauri:{os:['macos','windows','linux-x11','linux-wayland'], note:'原生 webview 宿主，跑同一份共享目录，不能用 Electron 的结果代替它。'},
+  wkwebview:{os:['macos'], note:'macOS 专用宿主，再跑同一份 40 格。所以 macOS 共享格是 120，不是 80。'},
+  appkit:{os:['macos'], note:'文档写下了 AX 树、设值、滚动、PX 点击，以及前台滑块拖拽。后台拖拽是精确拒绝。'},
+  swiftui:{os:['macos'], note:'后台点击和设值、前台 popover 触发有记录。瞬时面板的 AX 发现仍有缺口。不在当前 Space 的 SwiftUI 窗口会丢树。'},
+  wpf:{os:['windows'], note:'UIA 控件、文本、指针、滚动、拖拽、弹出和菜单。前台文本用夹具状态文件做 oracle。'},
+  winui3:{os:['windows'], note:'XAML 控件和前台单行 / 多行文本完整性。不是 WPF 结果的别名。'},
+  webview2:{os:['windows'], note:'窗口发现、CDP、JavaScript、DOM 点击。不要把它当成完整的 40 格共享目录。'},
+  gtk3:{os:['linux-x11','linux-wayland'], note:'AT-SPI / GTK3。Wayland 结果按合成器记账，不能从 X11 继承。'}
+};
+const OS_LABEL = {macos:'macos', windows:'windows', 'linux-x11':'linux', 'linux-wayland':'linux'};
+
+function matrixBrief(){
+  const os = $('#m-os').value, h = $('#m-harness').value, action = $('#m-action').value, addr = $('#m-addr').value, del = $('#m-del').value;
+  const spec = HARNESS[h];
+  const onOs = spec.os.includes(os);
+  const id = OS_LABEL[os] + '-' + h + '-' + action + '-' + addr + '-' + del;
+  let limit = '';
+  if (!onOs) limit = '这个夹具不在该系统的规范矩阵里。Windows 的 WPF 通过，不能写成 macOS 通过。';
+  else if (h === 'appkit' && action === 'drag' && del === 'background') limit = 'test-matrix 写明：AppKit 后台拖拽是精确拒绝。这一格通过，当且仅当拒绝码符合契约且没有桌面副作用。把拒绝重试成前台，就测错了契约。';
+  else if (os === 'linux-wayland' && addr === 'px' && del === 'background') limit = 'Wayland 上，后台 PX 只有目录声明的格子被证明。没有安全的目标寻址路由时必须精确拒绝。任意原始后台像素注入对普通客户端不可用。知道窗口在哪，改变不了合成器把事件送给谁。';
+  else if (action === 'drag' && addr === 'ax') limit = '共享矩阵把拖拽记在 PX 上，AX 用于发现拖拽源，不是一条独立的「纯 AX 拖拽」格。不要为了填表假设这条组合已经证明。';
+  else if (del === 'foreground' && os === 'linux-wayland') limit = '前台允许激活目标。Hyprland 的显式前台路由文档写明会改焦点和光标，并且不承诺恢复。不要把前台理解成用户毫无感知。';
+  else limit = '若该动作在此表面的账本里要求送达：夹具外部状态必须变化。若账本声明的是拒绝：错误码必须精确，且无焦点 / 叠放 / 输入泄漏。本切片器不声称这一格已在 0.31.0 上跑绿。';
+  const side = del === 'background'
+    ? '后台：焦点、z-order、真光标、前台应用必须保持不动。'
+    : '前台：允许把目标带到前面。是否恢复原先的前台应用，要看平台，不要假设总会恢复。';
+  $('#matrix-out').innerHTML =
+    '<div class="cell-id">' + id + '</div>' +
+    '<div class="callout ' + (onOs ? 'info' : 'bad') + '"><b>' + (onOs ? '这个表面在该系统的夹具清单里。' : '覆盖率不能继承。') + '</b> ' + spec.note + '</div>' +
+    '<div class="card"><h4>这一格至少要同时成立</h4><ul class="clean"><li>' + side + '</li><li>要么夹具 / 桌面自己的状态按契约变化，要么得到声明过的结构化拒绝。</li><li>工具返回 ok、effect 读不回、截图看起来像，三者都不能单独过关。</li></ul></div>' +
+    '<p class="body" style="margin-top:12px"><b>文档边界：</b>' + limit + '</p>';
+}
+['m-os','m-harness','m-action','m-addr','m-del'].forEach(id => $('#'+id).addEventListener('change', matrixBrief));
+matrixBrief();
+
+const SESS = {
+  mcp:{
+    title:'同一条连接，token 活到下一次快照',
+    body:'MCP 连接或 SDK 运行时有一个隐式会话，未命名调用会复用它。连接关闭、<code>end_session</code>，或空闲五分钟后，旧 token 失效。同一窗口的新快照会替换旧句柄，并在 <code>invalidated_snapshot_ids</code> 里点名。测试环要留在这一次会话里，每步行动前重新观察。'
+  },
+  oneshot:{
+    title:'两次 call，就是两次会话',
+    body:'公开文档写明：一次性 <code>cua-driver call</code> 各自得到一个一次性会话。第一次 <code>get_window_state</code> 拿到的 <code>element_token</code>，不能传给下一次进程里的 <code>click</code>。你会看到过期 token，而不是「元素路由坏了」。像素坐标可以来自你存下来的 PNG，但窗口只要挪过，坐标就不再是证据。'
+  }
+};
+function showSess(key){
+  const s = SESS[key];
+  $('#sess-out').innerHTML = '<div class="card"><h4>' + s.title + '</h4><p>' + s.body + '</p></div>';
+}
+$$('#sess-tabs .pg-tab').forEach(b => b.onclick = () => {
+  $$('#sess-tabs .pg-tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  showSess(b.dataset.sess);
+});
+showSess('mcp');
+
+const preds = [];
+const PRESETS = [
+  {name:'Count = 3', kind:'value', label:'Count', exp:'3'},
+  {name:'Count = 1', kind:'value', label:'Count', exp:'1'},
+  {name:'有 Increment', kind:'exists', label:'Increment', exp:'true'},
+  {name:'有 Missing', kind:'exists', label:'Missing', exp:'true'},
+  {name:'断言不存在', kind:'absent', label:'Missing', exp:'false'},
+  {name:'Saved 已选', kind:'selected', label:'Saved', exp:'true'},
+  {name:'窗口还在', kind:'window', label:'', exp:'true'}
+];
+const presetBox = $('#presets');
+PRESETS.forEach(p => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'pg-tab';
+  b.textContent = p.name;
+  b.onclick = () => { $('#p-kind').value = p.kind; $('#p-label').value = p.label; $('#p-exp').value = p.exp; addPred(); };
+  presetBox.appendChild(b);
+});
+
+function addPred(){
+  if (preds.length >= 8) return;
+  preds.push({kind:$('#p-kind').value, label:$('#p-label').value.trim(), exp:$('#p-exp').value.trim()});
+  renderPreds();
+}
+$('#p-add').onclick = addPred;
+$('#p-clear').onclick = () => { preds.length = 0; renderPreds(); $('#p-verdict').className = 'verdict'; };
+
+function renderPreds(){
+  if (!preds.length){ $('#p-log').textContent = '还没有谓词。最多 8 个，逻辑与。'; return; }
+  $('#p-log').textContent = JSON.stringify({pid:844, window_id:10725, stable_samples:2, expect:preds.map(toExpect)}, null, 2);
+}
+function toExpect(p){
+  if (p.kind === 'window') return {window:{exists:p.exp !== 'false'}};
+  if (p.kind === 'bounds') return {window:{bounds:{x:120,y:80,width:480,height:320,tolerance_px:2}}};
+  if (p.kind === 'absent') return {element:{selector:{label_contains:p.label || 'Missing'}, exists:false}};
+  const el = {selector:{label_contains:p.label || 'Count'}};
+  if (p.kind === 'exists') el.exists = true;
+  if (p.kind === 'value') el.value_equals = p.exp;
+  if (p.kind === 'enabled') el.enabled = p.exp !== 'false';
+  if (p.kind === 'selected') el.selected = p.exp !== 'false';
+  return {element:el};
+}
+
+const FAKE = [
+  {role:'AXButton', label:'Increment', enabled:true, value:null, selected:null},
+  {role:'AXStaticText', label:'Count', enabled:true, value:'3', selected:null},
+  {role:'AXCheckBox', label:'Saved', enabled:true, value:'0', selected:false}
+];
+
+function judgeOne(p, count){
+  if (p.kind === 'absent') return {status:'rejected', why:'schema 拒绝 exists:false。缺席在遍历被证明穷尽之前不能当谓词。'};
+  if (p.kind === 'window') return {status:'satisfied', why:'假窗口存在。'};
+  if (p.kind === 'bounds') return {status:'satisfied', why:'边界正好是 (120,80) 480×320，容差内。'};
+  const matches = FAKE.filter(el => !p.label || el.label.includes(p.label));
+  if (!matches.length) return {status:'unknown', why:'没找到「' + (p.label || '…') + '」。遍历未证明穷尽，所以是 unknown，不是 unsatisfied。'};
+  if (matches.length > 1 && p.kind !== 'exists') return {status:'unknown', why:'选择器匹配到多个元素，含糊即未知。'};
+  const el = matches[0];
+  if (p.kind === 'exists') return {status:'satisfied', why:'至少有一个可信元素匹配。'};
+  if (p.kind === 'enabled') return el.enabled === (p.exp !== 'false')
+    ? {status:'satisfied', why:el.label + ' 的 enabled 符合。'}
+    : {status:'unsatisfied', why:el.label + ' 的 enabled 不符。'};
+  if (p.kind === 'selected') return el.selected === (p.exp !== 'false')
+    ? {status:'satisfied', why:el.label + ' 的 selected 符合。'}
+    : {status:'unsatisfied', why:el.label + ' 当前未选中。'};
+  const value = el.label === 'Count' ? count : el.value;
+  return String(value) === p.exp
+    ? {status:'satisfied', why:el.label + ' 的值是 ' + value + '。'}
+    : {status:'unsatisfied', why:el.label + ' 的值是 ' + value + '，不是 ' + p.exp + '。'};
+}
+
+$('#p-run').onclick = () => {
+  if (!preds.length) addPred();
+  const drift = $('#p-drift').checked;
+  const samples = [judgeSample('3'), judgeSample(drift ? '4' : '3')];
+  const box = $('#p-verdict');
+  const rejected = samples[0].items.some(x => x.status === 'rejected');
+  let overall = 'satisfied';
+  samples.forEach(s => {
+    if (s.overall === 'rejected' || s.overall === 'unsatisfied') overall = s.overall === 'rejected' ? 'rejected' : 'unsatisfied';
+    else if (s.overall === 'unknown' && overall === 'satisfied') overall = 'unknown';
+  });
+  if (drift && overall === 'satisfied') overall = 'unknown';
+  const label = {satisfied:'satisfied', unsatisfied:'unsatisfied', unknown:'unknown', rejected:'入口拒绝'}[overall];
+  box.className = 'verdict show ' + (overall === 'satisfied' ? 'pass' : 'fail');
+  box.innerHTML = '<b>合并结果：' + label + '。</b> ' +
+    (overall === 'satisfied' ? '两次采样都满足，才相当于 stable_samples=2 通过。' :
+     rejected ? '请求在 schema 层被拒绝，不会变成一次「未知的成功」。' :
+     drift ? '第一次也许满足，第二次 Count 漂了。稳定样本不够，不能报成功。' :
+     'unknown 不是通过。去收紧选择器，或改用夹具自己的状态标记。');
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  $('#p-log').innerHTML = samples.map((s,i) =>
+    '<div class="dim">sample ' + (i+1) + '  Count=' + esc(s.count) + '</div>' +
+    s.items.map(it => '<div class="' + (it.status==='satisfied'?'ok':it.status==='unsatisfied'||it.status==='rejected'?'bad':'') + '">[' + it.status + '] ' + esc(it.why) + '</div>').join('')
+  ).join('');
+  $('#fake-count').textContent = drift ? '3 → 4' : '3';
+};
+function judgeSample(count){
+  const items = preds.map(p => judgeOne(p, count));
+  let overall = 'satisfied';
+  if (items.some(x => x.status === 'rejected')) overall = 'rejected';
+  else if (items.some(x => x.status === 'unsatisfied')) overall = 'unsatisfied';
+  else if (items.some(x => x.status === 'unknown')) overall = 'unknown';
+  return {count, items, overall};
+}
+</script>
+</body>
+</html>
