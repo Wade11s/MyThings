@@ -86,7 +86,7 @@ footer a:hover{color:var(--accent)}
   <header class="head">
     <span class="kicker"><span class="dot"></span>MYTHINGS · 静态网页合集</span>
     <h1>MyThings<em>.</em></h1>
-    <p class="sub">每个文件夹是一个可独立访问、可离线打开的自包含页面。这里是一切入口的地图。</p>
+    <p class="sub">本页就是全站<b>目录页</b>：每个文件夹是一个可独立访问、可离线打开的自包含页面，这里列出一切入口。</p>
     <div class="stats">
       <div><b id="n-pages">2</b><span>个页面</span></div>
       <div><b>2026</b><span>最近更新</span>10 月</div>
@@ -134,6 +134,7 @@ footer a:hover{color:var(--accent)}
     <ol>
       <li><b>mkdir 名称/</b>，写入自包含的 <code>名称/index.html</code>（CSS/JS 内联，零外部依赖）。</li>
       <li>在本页 <code>.cards</code> 里照抄一张卡片，指向 <code>名称/</code>。</li>
+      <li>在子页 nav 里加返回首页按钮：<code>&lt;a class="home-btn" href="../"&gt;← 首页&lt;/a&gt;</code>。</li>
       <li>在 <code>README.md</code> 表格补一行，然后 <code>git push</code>。</li>
       <li>约 1 分钟后生效：<code>wade11s.github.io/MyThings/名称/</code></li>
     </ol>

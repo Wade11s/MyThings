@@ -13,7 +13,8 @@
 
 - **自包含页面** —— 每个 `<文件夹>/index.html` 是单文件、可离线打开的静态网页：CSS/JS 内联在文件内，用系统字体，零外部依赖、零构建步骤。Pages 托管与离线双击都依赖这一点。
 - **文件夹即路由** —— 文件夹名就是 URL 路径：`Jev/index.html` → `/MyThings/Jev/`。所以每个页面的入口文件必须命名为 `index.html`。
-- **根 index.html 是地图** —— 它是站点首页，手工维护所有子页面入口。新增或删除页面时必须同步它，否则页面对外不可见。
+- **根 index.html 是目录页** —— 它是站点首页，手工维护所有子页面入口。新增或删除页面时必须同步它，否则页面对外不可见。
+- **子页可回首页** —— 每个子页面的固定 nav 右侧必须有 `← 首页` 按钮（`<a class="home-btn" href="../">`，样式内联在本页），nav 标题同时包成指向 `../` 的链接。
 - **内容公开** —— 本仓库 public，仓库内一切内容全球可见，并可能被搜索引擎收录；私密材料另放私有仓库。
 - **简体中文、暖色纸感风格** —— 页面与文档都用简体中文，视觉风格对齐现有 `Jev/index.html`（衬线标题、暖色卡片）。
 - **纯静态形态** —— 仓库根目录保持「HTML + 说明文档」。不引入框架、包管理器或 CI 构建。
@@ -23,9 +24,10 @@
 
 1. `mkdir <名称>`，写入自包含的 `<名称>/index.html`。
 2. 在根 `index.html` 的 `.wrap` 内照抄 Jev 卡片格式，加一张指向 `<名称>/` 的入口卡片。
-3. 在根 `README.md` 的表格里补一行 `<名称>/`。
-4. `git add . && git commit -m "add <名称>" && git push`。
-5. 验证部署：`gh api repos/Wade11s/MyThings/pages/builds/latest --jq .status` 轮询到 `built`（间隔约 10 秒），再 `curl -sIL https://wade11s.github.io/MyThings/<名称>/`。
+3. 在子页 nav 里加返回首页按钮：`<a class="home-btn" href="../">← 首页</a>`（CSS 同样内联）。
+4. 在根 `README.md` 的表格里补一行 `<名称>/`。
+5. `git add . && git commit -m "add <名称>" && git push`。
+6. 验证部署：`gh api repos/Wade11s/MyThings/pages/builds/latest --jq .status` 轮询到 `built`（间隔约 10 秒），再 `curl -sIL https://wade11s.github.io/MyThings/<名称>/`。
 
 完成标准：`https://wade11s.github.io/MyThings/<名称>/` 返回 HTTP 200，且页面内容与本地一致。
 

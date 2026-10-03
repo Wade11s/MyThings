@@ -4,6 +4,8 @@
 
 **🔗 https://wade11s.github.io/MyThings/**
 
+根 `index.html` 就是全站**目录页**（可搜索 / 标签筛选的卡片列表）；每个子页面顶部 nav 右侧都有 `← 首页` 按钮，点 logo 也可回首页。
+
 | 文件夹 | 内容 | 链接 |
 |---|---|---|
 | `Jev/` | Jev 模型深度调研 · 单文件交互式网页 | [/Jev/](https://wade11s.github.io/MyThings/Jev/) |
@@ -14,10 +16,10 @@
 
 ```bash
 mkdir NewFolder
-# 放入自包含的 NewFolder/index.html
+# 放入自包含的 NewFolder/index.html（含 nav 里的 <a class="home-btn" href="../">← 首页</a>）
 git add . && git commit -m "add NewFolder" && git push
 ```
 
 推送后约 1 分钟内生效：`https://wade11s.github.io/MyThings/NewFolder/`
 
-> 约定：每个文件夹放一个 `index.html`（内联 CSS/JS、无外部依赖），Pages 即自动托管，首页（根 `index.html`）列出所有入口。
+> 约定：每个文件夹放一个 `index.html`（内联 CSS/JS、无外部依赖），Pages 即自动托管；首页（根 `index.html`）列出所有入口，且每个子页必须有返回首页的按钮。

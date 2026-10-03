@@ -37,6 +37,13 @@ nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,23
 .nav-links a{color:var(--muted);font-size:13px;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
 @media(max-width:900px){.nav-links{display:none}}
+.nav-right{display:flex;align-items:center;gap:12px;min-width:0}
+a.nav-logo{color:var(--ink);text-decoration:none;transition:.15s}
+a.nav-logo:hover{color:var(--accent)}
+.home-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(194,65,12,.3);border-radius:999px;padding:6px 13px;white-space:nowrap;transition:.15s}
+.home-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.home-btn .arw{transition:.2s}
+.home-btn:hover .arw{transform:translateX(-3px)}
 
 /* ---------- hero ---------- */
 header.hero{background:radial-gradient(1200px 600px at 70% -10%,#f1e6d2 0%,transparent 55%),radial-gradient(900px 500px at 15% 110%,#f5e2d0 0%,transparent 50%),var(--paper);padding:140px 24px 80px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
@@ -187,17 +194,20 @@ footer.foot a:hover{color:var(--accent)}
 <div id="progress"></div>
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo">Karpathy <em>长推解析</em></div>
-    <div class="nav-links">
-      <a href="#orig">原文</a>
-      <a href="#core">核心论点</a>
-      <a href="#ladder">输出阶梯</a>
-      <a href="#ste">ASD-STE100</a>
-      <a href="#html">HTML 输出</a>
-      <a href="#video">3b1b 视频</a>
-      <a href="#deep">深度分析</a>
-      <a href="#crit">边界与批判</a>
-      <a href="#todo">落地清单</a>
+    <a class="nav-logo" href="../">Karpathy <em>长推解析</em></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#orig">原文</a>
+        <a href="#core">核心论点</a>
+        <a href="#ladder">输出阶梯</a>
+        <a href="#ste">ASD-STE100</a>
+        <a href="#html">HTML 输出</a>
+        <a href="#video">3b1b 视频</a>
+        <a href="#deep">深度分析</a>
+        <a href="#crit">边界与批判</a>
+        <a href="#todo">落地清单</a>
+      </div>
+      <a class="home-btn" href="../" title="返回 MyThings 首页（目录页）"><span class="arw">←</span>首页</a>
     </div>
   </div>
 </nav>
@@ -661,7 +671,7 @@ In summary:
 
 <footer class="foot">
   <span>MyThings / Karpathy · 单文件自包含页面 · 暖色纸感风格</span>
-  <span>原文：<a href="https://x.com/karpathy/status/2105819303471976479" target="_blank" rel="noopener">x.com/karpathy/status/2105819303471976479</a> · <a href="https://www.asd-ste100.org/" target="_blank" rel="noopener">ASD-STE100</a></span>
+  <span>原文：<a href="https://x.com/karpathy/status/2105819303471976479" target="_blank" rel="noopener">x.com/karpathy/status/2105819303471976479</a> · <a href="https://www.asd-ste100.org/" target="_blank" rel="noopener">ASD-STE100</a> · <a href="../">← 返回首页</a></span>
 </footer>
 
 <script>

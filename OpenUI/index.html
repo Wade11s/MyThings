@@ -34,6 +34,13 @@ nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,23
 .nav-links a{color:var(--muted);font-size:12.5px;padding:6px 9px;border-radius:6px;white-space:nowrap}
 .nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
 @media(max-width:1040px){.nav-links{display:none}}
+.nav-right{display:flex;align-items:center;gap:12px;min-width:0}
+a.nav-logo{color:var(--ink);text-decoration:none;transition:.15s}
+a.nav-logo:hover{color:var(--accent)}
+.home-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(194,65,12,.3);border-radius:999px;padding:6px 13px;white-space:nowrap;transition:.15s}
+.home-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.home-btn .arw{transition:.2s}
+.home-btn:hover .arw{transform:translateX(-3px)}
 header.hero{background:radial-gradient(1200px 600px at 70% -10%,#f1e6d2 0%,transparent 55%),radial-gradient(900px 500px at 15% 110%,#f5e2d0 0%,transparent 50%),var(--paper);color:var(--ink);padding:150px 24px 84px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 header.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(28,27,23,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(28,27,23,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(800px 500px at 50% 40%,#000 30%,transparent 75%);pointer-events:none}
 .hero-inner{max-width:1160px;margin:0 auto;position:relative}
@@ -228,9 +235,12 @@ footer{background:#efeadd;color:var(--muted);margin-top:90px;padding:56px 24px;f
 <div id="progress"></div>
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo">OpenUI<em>·</em>深度调研</div>
-    <div class="nav-links">
-      <a href="#tldr">速览</a><a href="#why">出发点</a><a href="#lang">语言</a><a href="#arch">架构</a><a href="#demo">演示</a><a href="#token">Token</a><a href="#reliability">可靠性</a><a href="#oui1">OUI-1</a><a href="#ecosystem">生态</a><a href="#compare">竞品</a><a href="#debate">争议</a><a href="#refs">参考</a>
+    <a class="nav-logo" href="../">OpenUI<em>·</em>深度调研</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#tldr">速览</a><a href="#why">出发点</a><a href="#lang">语言</a><a href="#arch">架构</a><a href="#demo">演示</a><a href="#token">Token</a><a href="#reliability">可靠性</a><a href="#oui1">OUI-1</a><a href="#ecosystem">生态</a><a href="#compare">竞品</a><a href="#debate">争议</a><a href="#refs">参考</a>
+      </div>
+      <a class="home-btn" href="../" title="返回 MyThings 首页（目录页）"><span class="arw">←</span>首页</a>
     </div>
   </div>
 </nav>
@@ -860,6 +870,7 @@ cd genui-chat-app && echo "OPENAI_API_KEY=sk-..." &gt; .env && npm run dev</pre>
     <b>OpenUI · 深度调研</b>
     <p>本页是对 <span class="mono">github.com/thesysdev/openui</span> 的独立调研与解读，非官方材料。数据与引言均来自公开的一手仓库文档、官方基准数据文件与社区讨论，链接见「参考来源」。所有数字都标注了口径与时间点；存在分歧处（如汇总可靠性分数）已同时给出两种口径。</p>
     <div class="fine">单文件静态页面 · 内联 CSS/JS · 无外部依赖 · 图表由原生 SVG 生成 · 页面内演示使用一个约 200 行的教学级 OpenUI Lang 迷你解析器 · 调研时间 2026-09-29</div>
+    <div class="fine" style="border-top:none;padding-top:10px;margin-top:10px"><a href="../">← 返回 MyThings 首页（目录页）</a></div>
   </div>
 </footer>
 

@@ -36,6 +36,13 @@ nav{position:fixed;top:3px;left:0;right:0;z-index:999;background:rgba(246,244,23
 .nav-links a{color:var(--muted);font-size:13px;padding:6px 10px;border-radius:6px;white-space:nowrap}
 .nav-links a:hover{color:var(--accent);background:var(--accent-soft);text-decoration:none}
 @media(max-width:900px){.nav-links{display:none}}
+.nav-right{display:flex;align-items:center;gap:12px;min-width:0}
+a.nav-logo{color:var(--ink);text-decoration:none;transition:.15s}
+a.nav-logo:hover{color:var(--accent)}
+.home-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(194,65,12,.3);border-radius:999px;padding:6px 13px;white-space:nowrap;transition:.15s}
+.home-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.home-btn .arw{transition:.2s}
+.home-btn:hover .arw{transform:translateX(-3px)}
 
 /* ---------- hero ---------- */
 header.hero{background:radial-gradient(1200px 600px at 70% -10%,#f1e6d2 0%,transparent 55%),radial-gradient(900px 500px at 15% 110%,#f5e2d0 0%,transparent 50%),var(--paper);color:var(--ink);padding:150px 24px 90px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
@@ -203,9 +210,12 @@ footer{background:#efeadd;color:var(--muted);margin-top:90px;padding:56px 24px;f
 
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo">Jev<em>·</em>深度解析</div>
-    <div class="nav-links">
-      <a href="#why">出发点</a><a href="#name">命名</a><a href="#position">定位</a><a href="#principle">原理</a><a href="#demo">演示</a><a href="#perf">性能</a><a href="#cases">案例</a><a href="#limits">边界</a><a href="#insight">启示</a><a href="#refs">参考</a>
+    <a class="nav-logo" href="../">Jev<em>·</em>深度解析</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#why">出发点</a><a href="#name">命名</a><a href="#position">定位</a><a href="#principle">原理</a><a href="#demo">演示</a><a href="#perf">性能</a><a href="#cases">案例</a><a href="#limits">边界</a><a href="#insight">启示</a><a href="#refs">参考</a>
+      </div>
+      <a class="home-btn" href="../" title="返回 MyThings 首页（目录页）"><span class="arw">←</span>首页</a>
     </div>
   </div>
 </nav>
@@ -777,6 +787,7 @@ footer{background:#efeadd;color:var(--muted);margin-top:90px;padding:56px 24px;f
     <b>Jev · 深度解析</b>
     <p>一个不肯写字的模型，和它补上的那层「判断」。本页从出发点、命名思想、定位、原理、性能、真实案例（含失败案例）、边界与启示八个维度，对 TypeSafe AI 的 System One 模型 Jev 做第三方研究整理。</p>
     <p class="fine">非官方文档 · 数据截至 2026-09-28 · 官方性能数字均为厂商自测口径，已尽可能搭配独立实测对照 · 页面为单文件静态 HTML，可离线打开</p>
+    <p class="fine" style="border-top:none;padding-top:10px;margin-top:10px"><a href="../">← 返回 MyThings 首页（目录页）</a></p>
   </div>
 </footer>
 
